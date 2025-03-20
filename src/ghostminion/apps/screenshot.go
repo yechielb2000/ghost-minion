@@ -18,3 +18,7 @@ func (c *ScreenshotApp) Stop() error {
 	fmt.Println("Stopping Screenshot app.")
 	return nil
 }
+
+func (c *ScreenshotApp) Validate() error {
+	return nil
+}

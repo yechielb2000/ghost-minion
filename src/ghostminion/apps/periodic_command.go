@@ -19,3 +19,7 @@ func (c *PeriodicCommandApp) Stop() error {
 	fmt.Println("Stopping PeriodicCommand app.")
 	return nil
 }
+
+func (c *PeriodicCommandApp) Validate() error {
+	return nil
+}

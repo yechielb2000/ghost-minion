@@ -2,6 +2,7 @@ package apps
 
 import (
 	"fmt"
+	"log"
 	"sync"
 )
 
@@ -14,10 +15,17 @@ type PeriodicGetFileApp struct {
 
 func (c *PeriodicGetFileApp) Start(wg *sync.WaitGroup) {
 	defer wg.Done()
+	if c.Path == "" {
+		log.Fatal("Path must be provided.")
+	}
 	fmt.Println("Starting PeriodicGetFile app.")
 }
 
 func (c *PeriodicGetFileApp) Stop() error {
 	fmt.Println("Stopping PeriodicGetFile app.")
+	return nil
+}
+
+func (c *PeriodicGetFileApp) Validate() error {
 	return nil
 }

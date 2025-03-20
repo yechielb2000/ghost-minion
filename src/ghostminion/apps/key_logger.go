@@ -16,3 +16,7 @@ func (c *KeyLoggerApp) Stop() error {
 	fmt.Println("Stopping KeyLogger app.")
 	return nil
 }
+
+func (c *KeyLoggerApp) Validate() error {
+	return nil
+}

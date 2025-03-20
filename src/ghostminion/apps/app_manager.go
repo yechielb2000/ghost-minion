@@ -9,6 +9,7 @@ import (
 type App interface {
 	Start(wg *sync.WaitGroup)
 	Stop() error
+	Validate() error // Validation method
 }
 
 type AppManager struct {

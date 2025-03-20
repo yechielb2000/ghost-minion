@@ -16,3 +16,7 @@ func (c *ClipboardApp) Stop() error {
 	fmt.Println("Stopping Clipboard app.")
 	return nil
 }
+
+func (c *ClipboardApp) Validate() error {
+	return nil
+}

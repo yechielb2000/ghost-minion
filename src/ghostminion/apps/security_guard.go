@@ -16,3 +16,7 @@ func (c *SecurityGuardApp) Stop() error {
 	fmt.Println("Stopping SecurityGuard app.")
 	return nil
 }
+
+func (c *SecurityGuardApp) Validate() error {
+	return nil
+}
