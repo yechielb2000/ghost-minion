@@ -24,7 +24,7 @@ func main() {
 		log.Fatalf("failed to cast security_guard app to SecurityGuardApp")
 	}
 	for securityGuard.IsSafeToRun() {
-
+		// communicate and run requests
 	}
 
 	appManager.StopAll()
