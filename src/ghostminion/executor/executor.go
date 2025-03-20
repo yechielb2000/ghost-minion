@@ -7,8 +7,7 @@ import (
 )
 
 func RunCommand(command string) ([]byte, error) {
-	const ShellToUse = "bash"
-	cmd := exec.Command(ShellToUse, "-c", command)
+	cmd := exec.Command(command)
 	cmd.SysProcAttr = &syscall.SysProcAttr{ParentProcess: 0}
 	output, err := cmd.CombinedOutput()
 	if err != nil {
