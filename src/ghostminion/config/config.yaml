@@ -1,0 +1,13 @@
+installation:
+  run_password: 'some password'
+  db_path: 'db path'
+communication:
+  interval: 'in seconds'
+  cnc:
+    - address: 'address'
+      key: 'c2 password'
+    - address: 'another address'
+      key: 'another c2 key'
+persistence:
+  binary_path: 'binary path to install'
+
