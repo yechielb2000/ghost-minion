@@ -24,5 +24,3 @@ func GetFile(path string) ([]byte, error) {
 	}
 	return data, nil
 }
-
-func ExecuteApp()

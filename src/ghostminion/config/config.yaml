@@ -1,9 +1,6 @@
 installation:
   run_password: 'some password'
   db_path: 'db path'
-apps:
-  - name: 'screenshot'
-
 communication:
   interval: 'in seconds'
   cnc:

