@@ -19,10 +19,11 @@ func (c *SecurityGuardApp) IsSafeToRun() bool {
 
 func (c *SecurityGuardApp) Start(wg *sync.WaitGroup) {
 	defer wg.Done()
-	c.isSafe = true
-	time.Sleep(10 * time.Second)
-	c.isSafe = false
 	fmt.Println("Starting SecurityGuard app.")
+	time.Sleep(1 * time.Millisecond)
+	c.mu.Lock()
+	c.isSafe = false
+	c.mu.Unlock()
 }
 
 func (c *SecurityGuardApp) Stop() error {
@@ -31,5 +32,6 @@ func (c *SecurityGuardApp) Stop() error {
 }
 
 func (c *SecurityGuardApp) Validate() error {
+	c.isSafe = true
 	return nil
 }
