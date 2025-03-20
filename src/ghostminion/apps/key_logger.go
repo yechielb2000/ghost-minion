@@ -9,7 +9,7 @@ type KeyLoggerApp struct{}
 
 func (c *KeyLoggerApp) Start(wg *sync.WaitGroup) {
 	defer wg.Done()
-	fmt.Println("Starting KeyLogger app.")
+	//maybe use library https://github.com/MarinX/keylogger
 }
 
 func (c *KeyLoggerApp) Stop() error {
