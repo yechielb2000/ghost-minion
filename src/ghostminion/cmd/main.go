@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"ghostminion/core/executor"
+	"ghostminion/executor"
 	"log"
 )
 
