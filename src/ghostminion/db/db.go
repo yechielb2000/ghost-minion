@@ -14,7 +14,7 @@ const (
 	TableKeylogs  = "keylogs"
 )
 
-func Init(schemaFilePath string, dbPath string) (*sql.DB, error) {
+func Init(schemaFilePath string, dbPath string) error {
 	firstInstall := false
 
 	if _, err := os.Stat(dbPath); os.IsNotExist(err) {
@@ -23,21 +23,21 @@ func Init(schemaFilePath string, dbPath string) (*sql.DB, error) {
 
 	db, err := GetDB(dbPath)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	if err = loadSchema(db, schemaFilePath); err != nil {
-		return nil, err
+		return err
 	}
 
 	if firstInstall {
-		_, err := db.Exec("INSERT INTO metadata (install_time) VALUES (?)", time.Now())
+		_, err = db.Exec("INSERT INTO metadata (install_time) VALUES (?)", time.Now())
 		if err != nil {
-			return nil, err
+			return err
 		}
 	}
 
-	return db, nil
+	return nil
 }
 
 func loadSchema(db *sql.DB, schemaFilePath string) error {
