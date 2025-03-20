@@ -40,6 +40,10 @@ func Init(schemaFilePath string, dbPath string) error {
 	return nil
 }
 
+func GetDB(dbPath string) (*sql.DB, error) {
+	return sql.Open("sqlite3", dbPath)
+}
+
 func loadSchema(db *sql.DB, schemaFilePath string) error {
 	schema, err := os.ReadFile(schemaFilePath)
 	if err != nil {
@@ -50,8 +54,4 @@ func loadSchema(db *sql.DB, schemaFilePath string) error {
 		return fmt.Errorf("failed to execute schema: %v", err)
 	}
 	return nil
-}
-
-func GetDB(dbPath string) (*sql.DB, error) {
-	return sql.Open("sqlite3", dbPath)
 }
