@@ -21,22 +21,13 @@ func Init(schemaFilePath string, dbPath string) (*sql.DB, error) {
 		firstInstall = true
 	}
 
-	// Open or create DB
-	db, err := sql.Open("sqlite3", dbPath)
+	db, err := GetDB(dbPath)
 	if err != nil {
 		return nil, err
 	}
 
-	// Read schema from file
-	schema, err := os.ReadFile(schemaFilePath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read schema.sql: %v", err)
-	}
-
-	// Execute schema SQL
-	_, err = db.Exec(string(schema))
-	if err != nil {
-		return nil, fmt.Errorf("failed to execute schema: %v", err)
+	if err = loadSchema(db, schemaFilePath); err != nil {
+		return nil, err
 	}
 
 	if firstInstall {
@@ -47,4 +38,20 @@ func Init(schemaFilePath string, dbPath string) (*sql.DB, error) {
 	}
 
 	return db, nil
+}
+
+func loadSchema(db *sql.DB, schemaFilePath string) error {
+	schema, err := os.ReadFile(schemaFilePath)
+	if err != nil {
+		return fmt.Errorf("failed to read schema.sql: %v", err)
+	}
+	_, err = db.Exec(string(schema))
+	if err != nil {
+		return fmt.Errorf("failed to execute schema: %v", err)
+	}
+	return nil
+}
+
+func GetDB(dbPath string) (*sql.DB, error) {
+	return sql.Open("sqlite3", dbPath)
 }
