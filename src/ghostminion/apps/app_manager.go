@@ -2,6 +2,7 @@ package apps
 
 import (
 	"fmt"
+	"log"
 	"sync"
 )
 
@@ -24,6 +25,9 @@ func NewAppManager() *AppManager {
 func (am *AppManager) AddApp(name string, app App) {
 	am.mu.Lock()
 	defer am.mu.Unlock()
+	if am.apps[name] != nil {
+		log.Printf("App %s was already exists. Overwriting app", name)
+	}
 	am.apps[name] = app
 }
 
@@ -49,7 +53,11 @@ func (am *AppManager) StopAll() {
 	defer am.mu.Unlock()
 
 	for name, app := range am.apps {
-		app.Stop()
-		fmt.Printf("Stopped app: %s\n", name)
+		err := app.Stop()
+		if err != nil {
+			log.Printf("Error stopping app: %s\n", name)
+		} else {
+			fmt.Printf("Stopped app: %s\n", name)
+		}
 	}
 }
