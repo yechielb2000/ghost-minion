@@ -1,6 +1,7 @@
 package apps
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"sync"
@@ -21,6 +22,27 @@ func NewAppManager() *AppManager {
 	return &AppManager{
 		apps: make(map[string]App),
 	}
+}
+
+func (am *AppManager) GetApp(name string) (App, error) {
+	am.mu.Lock()
+	defer am.mu.Unlock()
+	app := am.apps[name]
+	if app == nil {
+		return nil, errors.New("am: app not found")
+	}
+	return app, nil
+}
+
+func (am *AppManager) ListApps() []string {
+	am.mu.Lock()
+	defer am.mu.Unlock()
+
+	var appNames []string
+	for name := range am.apps {
+		appNames = append(appNames, name)
+	}
+	return appNames
 }
 
 func (am *AppManager) AddApp(name string, app App) {
