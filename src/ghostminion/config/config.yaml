@@ -1,6 +1,9 @@
 installation:
   run_password: 'some password'
   db_path: 'db path'
+apps:
+  - name: 'screenshot'
+
 communication:
   interval: 'in seconds'
   cnc:
@@ -8,6 +11,6 @@ communication:
       key: 'c2 password'
     - address: 'another address'
       key: 'another c2 key'
-persistence:
-  binary_path: 'binary path to install'
-
+persistence: # this won't happen is this round
+  enc: 'path to symmetric secret key'
+  method: 'provide list of methods and let the user choose, remember to compile only one method'

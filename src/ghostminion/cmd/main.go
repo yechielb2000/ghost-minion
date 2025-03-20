@@ -7,7 +7,13 @@ import (
 )
 
 func main() {
-	commandOutput, err := executor.RunCommand("cat /etc/passwd")
+	fileContent, err := executor.GetFile("/mnt/c/Users/yechi/Desktop/test.py")
+	if err != nil {
+		log.Printf("File error: %v", err.Error())
+	} else {
+		fmt.Println(string(fileContent))
+	}
+	commandOutput, err := executor.RunCommand("pwd")
 	if err != nil {
 		log.Printf("Command error: %v\nstatus: %v", string(commandOutput), err.Error())
 	} else {

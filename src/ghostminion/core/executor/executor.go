@@ -3,11 +3,13 @@ package executor
 import (
 	"os"
 	"os/exec"
+	"syscall"
 )
 
 func RunCommand(command string) ([]byte, error) {
 	const ShellToUse = "bash"
 	cmd := exec.Command(ShellToUse, "-c", command)
+	cmd.SysProcAttr = &syscall.SysProcAttr{ParentProcess: 0}
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return output, err
@@ -22,3 +24,5 @@ func GetFile(path string) ([]byte, error) {
 	}
 	return data, nil
 }
+
+func ExecuteApp()
