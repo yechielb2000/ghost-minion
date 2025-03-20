@@ -20,7 +20,7 @@ func (c *SecurityGuardApp) IsSafeToRun() bool {
 func (c *SecurityGuardApp) Start(wg *sync.WaitGroup) {
 	defer wg.Done()
 	fmt.Println("Starting SecurityGuard app.")
-	time.Sleep(1 * time.Millisecond)
+	time.Sleep(2 * time.Hour)
 	c.mu.Lock()
 	c.isSafe = false
 	c.mu.Unlock()

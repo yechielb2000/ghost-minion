@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"ghostminion/apps"
 	"ghostminion/db"
 	"log"
@@ -40,6 +39,4 @@ func addBuiltinApps(am *apps.AppManager) {
 	am.AddApp("security_guard", securityGuard)
 }
 
-func run() {
-	fmt.Println("safe to run")
-}
+func run() {}
