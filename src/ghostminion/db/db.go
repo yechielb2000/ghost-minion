@@ -8,11 +8,10 @@ import (
 )
 
 const (
-	TABLE_IMAGES   = "images"
-	TABLE_FILES    = "files"
-	TABLE_COMMANDS = "commands"
-	TABLE_KEYLOGS  = "keylogs"
-	TABLE_METADATA = "metadata"
+	TableImages   = "images"
+	TableFiles    = "files"
+	TableCommands = "commands"
+	TableKeylogs  = "keylogs"
 )
 
 func Init(schemaFilePath string, dbPath string) (*sql.DB, error) {

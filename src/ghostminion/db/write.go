@@ -13,17 +13,17 @@ func insertData(db *sql.DB, table, requestID string, data []byte) error {
 }
 
 func StoreImage(db *sql.DB, requestID string, imgData []byte) error {
-	return insertData(db, TABLE_IMAGES, requestID, imgData)
+	return insertData(db, TableImages, requestID, imgData)
 }
 
 func StoreFile(db *sql.DB, requestID string, fileData []byte) error {
-	return insertData(db, TABLE_FILES, requestID, fileData)
+	return insertData(db, TableFiles, requestID, fileData)
 }
 
 func StoreCommand(db *sql.DB, requestID string, cmdOutput []byte) error {
-	return insertData(db, TABLE_COMMANDS, requestID, cmdOutput)
+	return insertData(db, TableCommands, requestID, cmdOutput)
 }
 
 func StoreKeylogger(db *sql.DB, requestID string, keyloggerData []byte) error {
-	return insertData(db, TABLE_KEYLOGS, requestID, keyloggerData)
+	return insertData(db, TableKeylogs, requestID, keyloggerData)
 }
