@@ -27,6 +27,14 @@ func (c *SecurityGuardApp) Start(wg *sync.WaitGroup) {
 }
 
 func (c *SecurityGuardApp) Stop() error {
+	/*
+		isSafe should be false on these terms
+		- it has been too much time without communicating with the C2 (3 days)
+		- unknown process or user has touched the db or config file
+		- someone wrote the process name in its bash history
+		- any of the files that was supposed to be in its place is not anymore
+		- the cpu of the target has increase too much because of our process
+	*/
 	fmt.Println("Stopping SecurityGuard app.")
 	return nil
 }
