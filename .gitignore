@@ -8,6 +8,7 @@
 *.so
 *.dylib
 notes.txt
+identifier.sqlite
 
 # Test binary, built with `go test -c`
 *.test
