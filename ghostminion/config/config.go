@@ -11,6 +11,7 @@ import (
 type InstallationConfig struct {
 	DBPath     string `yaml:"DBPath"`
 	ConfigFile string `yaml:"ConfigFile"`
+	DBPassword string `yaml:"DBPassword"`
 }
 
 type ServerConfig struct {

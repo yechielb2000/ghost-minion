@@ -3,10 +3,10 @@ module ghostminion
 go 1.24.1
 
 require (
+	crawshaw.io/sqlite v0.3.2
 	github.com/MarinX/keylogger v0.0.0-20240620105846-48ca9d01f566
 	github.com/kbinani/screenshot v0.0.0-20250118074034-a3924b7bbc8c
 	gopkg.in/yaml.v3 v3.0.1
-	modernc.org/sqlite v1.36.1
 )
 
 require (
@@ -24,4 +24,5 @@ require (
 	modernc.org/libc v1.61.13 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.8.2 // indirect
+	modernc.org/sqlite v1.36.1 // indirect
 )

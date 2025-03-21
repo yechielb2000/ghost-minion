@@ -1,5 +1,6 @@
 Installation:
   DBPath: '../tests/test.db'
+  DBPassword: 'ghostminion'
   ConfigFile: '../tests/config.yaml'
 Communication:
   Interval: 'in seconds'
