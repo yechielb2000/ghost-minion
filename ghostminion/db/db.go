@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 	"fmt"
+	_ "modernc.org/sqlite"
 	"os"
 	"time"
 )
@@ -14,7 +15,9 @@ const (
 	TableKeylogs  = "keylogs"
 )
 
-func Init(schemaFilePath string, dbPath string) error {
+const dbSchemaFilePath = "./db/schema.sql"
+
+func Init(dbPath string) error {
 	firstInstall := false
 
 	if _, err := os.Stat(dbPath); os.IsNotExist(err) {
@@ -26,7 +29,7 @@ func Init(schemaFilePath string, dbPath string) error {
 		return err
 	}
 
-	if err = loadSchema(db, schemaFilePath); err != nil {
+	if err = loadSchema(db); err != nil {
 		return err
 	}
 
@@ -40,8 +43,12 @@ func Init(schemaFilePath string, dbPath string) error {
 	return nil
 }
 
-func loadSchema(db *sql.DB, schemaFilePath string) error {
-	schema, err := os.ReadFile(schemaFilePath)
+func GetDB(dbPath string) (*sql.DB, error) {
+	return sql.Open("sqlite", dbPath)
+}
+
+func loadSchema(db *sql.DB) error {
+	schema, err := os.ReadFile(dbSchemaFilePath)
 	if err != nil {
 		return fmt.Errorf("failed to read schema.sql: %v", err)
 	}
@@ -50,8 +57,4 @@ func loadSchema(db *sql.DB, schemaFilePath string) error {
 		return fmt.Errorf("failed to execute schema: %v", err)
 	}
 	return nil
-}
-
-func GetDB(dbPath string) (*sql.DB, error) {
-	return sql.Open("sqlite3", dbPath)
 }

@@ -9,31 +9,30 @@ import (
 )
 
 type InstallationConfig struct {
-	RunPassword string
-	DBPath      string
-	ConfigFile  string
+	DBPath     string `yaml:"DBPath"`
+	ConfigFile string `yaml:"ConfigFile"`
 }
 
 type ServerConfig struct {
-	Address string
-	Key     int
+	Address string `yaml:"Address"`
+	Key     string `yaml:"Key"`
 }
 
 type CommunicationConfig struct {
-	Interval string
-	Servers  []ServerConfig
+	Interval string         `yaml:"Interval"`
+	Servers  []ServerConfig `yaml:"Servers"`
 }
 
 type AppsConfig struct {
-	Keylogger     apps.KeyLoggerApp
-	Screenshot    apps.ScreenshotApp
-	SecurityGuard apps.SecurityGuardApp
+	Keylogger     *apps.KeyLoggerApp     `yaml:"Keylogger,omitempty"`
+	Screenshot    *apps.ScreenshotApp    `yaml:"Screenshot,omitempty"`
+	SecurityGuard *apps.SecurityGuardApp `yaml:"SecurityGuard,omitempty"`
 }
 
 type Config struct {
-	Installation  InstallationConfig
-	Communication CommunicationConfig
-	Apps          AppsConfig
+	Installation  InstallationConfig  `yaml:"Installation"`
+	Communication CommunicationConfig `yaml:"Communication"`
+	Apps          AppsConfig          `yaml:"Apps"`
 }
 
 var (

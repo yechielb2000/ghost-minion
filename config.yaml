@@ -1,0 +1,13 @@
+Installation:
+  DBPath: '../tests/test.db'
+  ConfigFile: '../tests/config.yaml'
+Communication:
+  Interval: 'in seconds'
+  Servers:
+    - Address: 'address'
+      Key: 'c2 password'
+    - Address: 'another address'
+      Key: 'another c2 key'
+Apps:
+  Screenshot:
+    interval: 300
