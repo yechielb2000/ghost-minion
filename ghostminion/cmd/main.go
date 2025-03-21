@@ -12,7 +12,7 @@ func main() {
 	var wg sync.WaitGroup
 	wg.Add(1) // for run app
 
-	configInstance, err := config.LoadConfig("../config/config.yaml") //get from configPath
+	configInstance, err := config.LoadConfig("../config.yaml") //get from configPath
 	if err != nil {
 		panic(err)
 	}
