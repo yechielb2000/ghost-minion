@@ -1,6 +1,6 @@
 Installation:
-  DBPath: 'where to create db'
-  ConfigFile: 'where to save this file'
+  DBPath: '../tests/test.db'
+  ConfigFile: '../tests/config.yaml'
 Communication:
   Interval: 'in seconds'
   Servers:
