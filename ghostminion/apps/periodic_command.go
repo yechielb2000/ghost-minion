@@ -2,6 +2,7 @@ package apps
 
 import (
 	"fmt"
+	"ghostminion/db"
 	"ghostminion/executor"
 	"sync"
 	"time"
@@ -21,7 +22,7 @@ func (c *PeriodicCommandApp) Start(wg *sync.WaitGroup) {
 		if err != nil {
 			fmt.Println("error: ", err)
 		}
-		fmt.Println("command output: ", commandOutput) // save this to db
+		err = db.WriteDataRow("reqId", db.ScreenshotsDataType, commandOutput) // replace requestId
 		time.Sleep(time.Duration(c.Interval) * time.Second)
 	}
 }
