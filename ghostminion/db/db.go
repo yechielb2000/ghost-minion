@@ -10,10 +10,11 @@ import (
 )
 
 const (
-	TableImages   = "images"
-	TableFiles    = "files"
-	TableCommands = "commands"
-	TableKeylogs  = "keylogs"
+	ImagesDataType      = "images"
+	FilesDataType       = "files"
+	CommandsDataType    = "commands"
+	KeylogsDataType     = "keylogs"
+	ScreenshotsDataType = "screenshots"
 )
 
 const dbSchemaFilePath = "./db/schema.sql"

