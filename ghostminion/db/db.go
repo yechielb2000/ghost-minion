@@ -18,6 +18,8 @@ const (
 
 const dbSchemaFilePath = "./db/schema.sql"
 
+var dbInstance *sql.DB
+
 func Init(dbPath string, dbPassword string) error {
 	firstInstall := false
 
@@ -25,17 +27,16 @@ func Init(dbPath string, dbPassword string) error {
 		firstInstall = true
 	}
 
-	db, err := GetDB(dbPath, dbPassword)
+	err := initDBInstance(dbPath, dbPassword)
 	if err != nil {
 		return err
 	}
-
-	if err = loadSchema(db); err != nil {
+	if err = loadSchema(dbInstance); err != nil {
 		return err
 	}
 
 	if firstInstall {
-		_, err = db.Exec("INSERT INTO metadata (install_time) VALUES (?)", time.Now())
+		_, err = dbInstance.Exec("INSERT INTO metadata (install_time) VALUES (?)", time.Now())
 		if err != nil {
 			return err
 		}
@@ -44,9 +45,15 @@ func Init(dbPath string, dbPassword string) error {
 	return nil
 }
 
-func GetDB(dbPath string, dbPassword string) (*sql.DB, error) {
+func initDBInstance(dbPath string, dbPassword string) error {
 	connStr := fmt.Sprintf("%s?_pragma_key=%s", dbPath, dbPassword)
-	return sql.Open("sqlite", connStr)
+	var err error
+	dbInstance, err = sql.Open("sqlite", connStr)
+	if err != nil {
+		return err
+	}
+	return nil
+
 }
 
 func loadSchema(db *sql.DB) error {
@@ -61,10 +68,10 @@ func loadSchema(db *sql.DB) error {
 	return nil
 }
 
-func ReadOldestRow(db *sql.DB, table string) (string, []byte, time.Time, error) {
+func ReadOldestRow(table string) (string, []byte, time.Time, error) {
 	rawQuery := "SELECT * FROM %s WHERE exec_time = (SELECT MIN(exec_time) FROM %s) LIMIT 1"
 	query := fmt.Sprintf(rawQuery, table, table)
-	row := db.QueryRow(query)
+	row := dbInstance.QueryRow(query)
 
 	var requestID string
 	var data []byte
@@ -76,21 +83,21 @@ func ReadOldestRow(db *sql.DB, table string) (string, []byte, time.Time, error) 
 		}
 		return "", nil, time.Time{}, err
 	}
-	err = RemoveOneRow(db, table, requestID)
+	err = RemoveOneRow(table, requestID)
 	if err != nil {
 		return "", nil, time.Time{}, err
 	}
 	return requestID, data, execTime, nil
 }
 
-func RemoveOneRow(db *sql.DB, table string, requestID string) error {
+func RemoveOneRow(table string, requestID string) error {
 	query := fmt.Sprintf("DELETE FROM %s WHERE request_id = ?", table)
-	_, err := db.Exec(query, requestID)
+	_, err := dbInstance.Exec(query, requestID)
 	return err
 }
 
-func WriteDataRow(db *sql.DB, requestID string, dataType string, data []byte) error {
+func WriteDataRow(requestID string, dataType string, data []byte) error {
 	query := fmt.Sprintf("INSERT INTO data (request_id, data, data_type, exec_time) VALUES (?, ?, ?, ?)")
-	_, err := db.Exec(query, requestID, data, dataType, time.Now())
+	_, err := dbInstance.Exec(query, requestID, data, dataType, time.Now())
 	return err
 }

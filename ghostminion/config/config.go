@@ -2,7 +2,6 @@ package config
 
 import (
 	"fmt"
-	"ghostminion/apps"
 	"gopkg.in/yaml.v3"
 	"os"
 	"sync"
@@ -25,9 +24,9 @@ type CommunicationConfig struct {
 }
 
 type AppsConfig struct {
-	Keylogger     *apps.KeyLoggerApp     `yaml:"Keylogger,omitempty"`
-	Screenshot    *apps.ScreenshotApp    `yaml:"Screenshot,omitempty"`
-	SecurityGuard *apps.SecurityGuardApp `yaml:"SecurityGuard,omitempty"`
+	Keylogger     map[string]any `yaml:"Keylogger,omitempty"`
+	Screenshot    map[string]any `yaml:"Screenshot,omitempty"`
+	SecurityGuard map[string]any `yaml:"SecurityGuard,omitempty"`
 }
 
 type Config struct {

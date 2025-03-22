@@ -3,6 +3,8 @@ package apps
 import (
 	"bytes"
 	"fmt"
+	"ghostminion/config"
+	"ghostminion/db"
 	"github.com/kbinani/screenshot"
 	"image"
 	"image/jpeg"
@@ -17,6 +19,7 @@ type ScreenshotApp struct {
 
 func (c *ScreenshotApp) Start(wg *sync.WaitGroup) {
 	defer wg.Done()
+
 	for {
 		c.runScreenshot()
 		time.Sleep(time.Duration(c.Interval) * time.Second)
@@ -33,6 +36,7 @@ func (c *ScreenshotApp) Validate() error {
 }
 
 func (c *ScreenshotApp) runScreenshot() {
+	configInstance := config.GetConfig()
 
 	numOfActiveDisplays := screenshot.NumActiveDisplays()
 	if numOfActiveDisplays <= 0 {
@@ -57,5 +61,6 @@ func (c *ScreenshotApp) runScreenshot() {
 		if err != nil {
 			fmt.Printf("error: %v", err)
 		}
+		db.WriteDataRow()
 	}
 }
