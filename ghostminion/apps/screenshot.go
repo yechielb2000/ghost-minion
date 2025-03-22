@@ -59,7 +59,7 @@ func (c *ScreenshotApp) runScreenshot() {
 		if err != nil {
 			fmt.Printf("error: %v", err)
 		}
-		err = db.WriteDataRow(strconv.Itoa(i), "screenshot", buf.Bytes())
+		err = db.WriteDataRow(strconv.Itoa(i), db.ScreenshotsDataType, buf.Bytes()) // replace requestId
 		if err != nil {
 			fmt.Printf("error: %v", err)
 		}
