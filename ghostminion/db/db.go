@@ -91,8 +91,7 @@ func ReadOldestRow(table string) (string, []byte, time.Time, error) {
 }
 
 func RemoveOneRow(table string, requestID string) error {
-	query := fmt.Sprintf("DELETE FROM %s WHERE request_id = ?", table)
-	_, err := dbInstance.Exec(query, requestID)
+	_, err := dbInstance.Exec("DELETE FROM ? WHERE request_id = ?", table, requestID)
 	return err
 }
 
