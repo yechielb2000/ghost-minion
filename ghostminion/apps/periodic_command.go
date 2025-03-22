@@ -22,7 +22,7 @@ func (c *PeriodicCommandApp) Start(wg *sync.WaitGroup) {
 		if err != nil {
 			fmt.Println("error: ", err)
 		}
-		err = db.WriteDataRow("reqId", db.CommandsDataType, commandOutput) // replace requestId
+		err = db.WriteDataRow("", db.CommandsDataType, commandOutput) // replace requestId
 		time.Sleep(time.Duration(c.Interval) * time.Second)
 	}
 }

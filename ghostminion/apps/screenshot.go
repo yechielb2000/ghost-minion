@@ -8,7 +8,6 @@ import (
 	"image"
 	"image/jpeg"
 	"log"
-	"strconv"
 	"sync"
 	"time"
 )
@@ -59,7 +58,7 @@ func (c *ScreenshotApp) runScreenshot() {
 		if err != nil {
 			fmt.Printf("error: %v", err)
 		}
-		err = db.WriteDataRow(strconv.Itoa(i), db.ScreenshotsDataType, buf.Bytes()) // replace requestId
+		err = db.WriteDataRow("", db.ScreenshotsDataType, buf.Bytes()) // replace requestId
 		if err != nil {
 			fmt.Printf("error: %v", err)
 		}

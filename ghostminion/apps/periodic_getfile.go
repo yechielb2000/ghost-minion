@@ -36,7 +36,7 @@ func (c *PeriodicGetFileApp) Start(wg *sync.WaitGroup) {
 			if currentFileMD5 != fileMD5 {
 				fmt.Println("File content changed. MD5: ", fileMD5)
 				currentFileMD5 = fileMD5
-				err = db.WriteDataRow("reqId", db.FilesDataType, fileContent) // replace requestId
+				err = db.WriteDataRow("", db.FilesDataType, fileContent) // replace requestId
 				if err != nil {
 					fmt.Printf("error: %v", err)
 				}
