@@ -17,7 +17,7 @@ func main() {
 		panic(err)
 	}
 
-	err = db.Init(configInstance.Installation.DBPath)
+	err = db.Init(configInstance.Installation.DBPath, configInstance.Installation.DBPassword)
 	if err != nil {
 		panic(err)
 	}

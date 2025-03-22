@@ -12,7 +12,7 @@ type PeriodicGetFileApp struct {
 	Path     string
 	MaxSize  int  // maximum allowed size in bytes.
 	Interval int  // in seconds
-	CheckMD5 bool // check if file was changed since last run.
+	CheckMD5 bool // check if a file was changed since last run.
 }
 
 func (c *PeriodicGetFileApp) Start(wg *sync.WaitGroup) {
