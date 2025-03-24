@@ -17,6 +17,8 @@ func (c *SecurityGuardApp) IsSafeToRun() bool {
 	return c.isSafe
 }
 
+var stopSecurityGuardApp = false
+
 func (c *SecurityGuardApp) Start(wg *sync.WaitGroup) {
 	defer wg.Done()
 	fmt.Println("Starting SecurityGuard app.")
@@ -24,9 +26,7 @@ func (c *SecurityGuardApp) Start(wg *sync.WaitGroup) {
 	c.mu.Lock()
 	c.isSafe = false
 	c.mu.Unlock()
-}
 
-func (c *SecurityGuardApp) Stop() error {
 	/*
 		isSafe should be false on these terms
 		- it has been too much time without communicating with the C2 (3 days)
@@ -35,7 +35,10 @@ func (c *SecurityGuardApp) Stop() error {
 		- any of the files that was supposed to be in its place is not anymore
 		- the cpu of the target has increase too much because of our process
 	*/
-	fmt.Println("Stopping SecurityGuard app.")
+}
+
+func (c *SecurityGuardApp) Stop() error {
+	stopSecurityGuardApp = true
 	return nil
 }
 
