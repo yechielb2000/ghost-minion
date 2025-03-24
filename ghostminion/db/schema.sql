@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS data
     request_id TEXT,
     data       BLOB,
     data_type  TEXT NOT NULL,
-    exec_time  TIMESTAMP
+    exec_time  DATETIME DEFAULT CURRENT_TIMESTAMP
 
 );
 
@@ -18,5 +18,5 @@ CREATE TABLE IF NOT EXISTS logs
     message TEXT,
     level TEXT,
     extras TEXT,
-    log_time TIMESTAMP
+    log_time DATETIME DEFAULT CURRENT_TIMESTAMP
 )
