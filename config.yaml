@@ -7,8 +7,10 @@ Communication:
   Interval: 'in seconds'
   Servers:
     - Address: 'address'
+      Port: 1234
       Key: 'c2 password'
     - Address: 'another address'
+      Port: 5768
       Key: 'another c2 key'
 Apps:
   Screenshot:

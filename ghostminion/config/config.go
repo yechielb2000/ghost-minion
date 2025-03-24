@@ -16,6 +16,7 @@ type InstallationConfig struct {
 
 type ServerConfig struct {
 	Address string `yaml:"Address"`
+	Port    int    `yaml:"Port"`
 	Key     string `yaml:"Key"`
 }
 
