@@ -10,7 +10,6 @@ import (
 )
 
 const (
-	ImagesDataType      = "images"
 	FilesDataType       = "files"
 	CommandsDataType    = "commands"
 	KeylogsDataType     = "keylogs"
