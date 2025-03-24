@@ -80,29 +80,60 @@ func loadSchema(db *sql.DB) error {
 
 }
 
-func ReadOldestRow(table string) (string, []byte, time.Time, error) {
-	rawQuery := "SELECT * FROM %s WHERE exec_time = (SELECT MIN(exec_time) FROM %s) LIMIT 1"
+func ReadOldestDataRow(table string) (map[string]interface{}, error) {
+	rawQuery := "SELECT * FROM %s WHERE save_time = (SELECT MIN(save_time) FROM %s) LIMIT 1"
 	query := fmt.Sprintf(rawQuery, table, table)
 	row := dbInstance.QueryRow(query)
 
-	var requestID string
-	var data []byte
-	var execTime time.Time
-	err := row.Scan(&requestID, &data, &execTime)
+	columns, err := dbInstance.Query(fmt.Sprintf("PRAGMA table_info(%s)", table))
+	if err != nil {
+		return nil, err
+	}
+	defer columns.Close()
+
+	var colNames []string
+	for columns.Next() {
+		var cid int
+		var name string
+		var typ string
+		var notnull, defaultValue, pk interface{}
+		if err := columns.Scan(&cid, &name, &typ, &notnull, &defaultValue, &pk); err != nil {
+			return nil, err
+		}
+		colNames = append(colNames, name)
+	}
+
+	colValues := make([]interface{}, len(colNames))
+	colPointers := make([]interface{}, len(colNames))
+	for i := range colValues {
+		colPointers[i] = &colValues[i]
+	}
+
+	err = row.Scan(colPointers...)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return "", nil, time.Time{}, nil // No data
+			return nil, nil // No data
 		}
-		return "", nil, time.Time{}, err
+		return nil, err
 	}
-	err = RemoveOneRow(table, requestID)
-	if err != nil {
-		return "", nil, time.Time{}, err
+
+	result := make(map[string]interface{})
+	for i, colName := range colNames {
+		result[colName] = colValues[i]
 	}
-	return requestID, data, execTime, nil
+
+	if requestID, exists := result["request_id"].(string); exists {
+		err = RemoveOneRow(table, requestID)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return result, nil
 }
 
 func RemoveOneRow(table string, requestID string) error {
+	// remove by id and not request id
 	_, err := dbInstance.Exec("DELETE FROM ? WHERE request_id = ?", table, requestID)
 	return err
 }

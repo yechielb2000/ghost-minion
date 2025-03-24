@@ -14,9 +14,11 @@ type PeriodicCommandApp struct {
 	Interval uint // in seconds
 }
 
+var stopPeriodicCommandApp = false
+
 func (c *PeriodicCommandApp) Start(wg *sync.WaitGroup) {
 	defer wg.Done()
-	for {
+	for stopPeriodicCommandApp != true {
 		fmt.Println("Running command: ", c.Command)
 		commandOutput, err := executor.RunCommand(c.Command)
 		if err != nil {
@@ -28,7 +30,7 @@ func (c *PeriodicCommandApp) Start(wg *sync.WaitGroup) {
 }
 
 func (c *PeriodicCommandApp) Stop() error {
-	fmt.Println("Stopping PeriodicCommand app.")
+	stopPeriodicCommandApp = true
 	return nil
 }
 

@@ -3,12 +3,17 @@ package cryptography
 import (
 	"crypto/aes"
 	"crypto/cipher"
+	"encoding/hex"
 	"errors"
+	"ghostminion/config"
 )
 
 func DecryptData(cipherText []byte) ([]byte, error) {
-	key := []byte("get key from config")
-
+	key, err := hex.DecodeString(config.Instance.Installation.AESKey)
+	if err != nil {
+		return nil, err
+	}
+	
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err

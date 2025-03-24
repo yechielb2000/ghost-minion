@@ -16,10 +16,12 @@ type PeriodicGetFileApp struct {
 	CheckMD5 bool // check if a file was changed since last run.
 }
 
+var stopPeriodicGetFileApp = false
+
 func (c *PeriodicGetFileApp) Start(wg *sync.WaitGroup) {
 	defer wg.Done()
 	currentFileMD5 := ""
-	for {
+	for stopPeriodicGetFileApp != true {
 		fileContent, err := executor.GetFile(c.Path)
 		if err != nil {
 			fmt.Println("error: ", err)
@@ -47,7 +49,7 @@ func (c *PeriodicGetFileApp) Start(wg *sync.WaitGroup) {
 }
 
 func (c *PeriodicGetFileApp) Stop() error {
-	fmt.Println("Stopping PeriodicGetFile app.")
+	stopPeriodicGetFileApp = true
 	return nil
 }
 

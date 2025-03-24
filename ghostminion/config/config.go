@@ -11,10 +11,12 @@ type InstallationConfig struct {
 	DBPath     string `yaml:"DBPath"`
 	ConfigFile string `yaml:"ConfigFile"`
 	DBPassword string `yaml:"DBPassword"`
+	AESKey     string `yaml:"AESKey"`
 }
 
 type ServerConfig struct {
 	Address string `yaml:"Address"`
+	Port    int    `yaml:"Port"`
 	Key     string `yaml:"Key"`
 }
 
@@ -36,8 +38,8 @@ type Config struct {
 }
 
 var (
-	configInstance *Config
-	once           sync.Once
+	Instance *Config
+	once     sync.Once
 )
 
 func LoadConfig(path string) (*Config, error) {
@@ -49,19 +51,19 @@ func LoadConfig(path string) (*Config, error) {
 			loadError = fmt.Errorf("failed to read config file: %w", readError)
 			return
 		}
-		configInstance = &Config{}
-		if yamlError := yaml.Unmarshal(data, configInstance); yamlError != nil {
+		Instance = &Config{}
+		if yamlError := yaml.Unmarshal(data, Instance); yamlError != nil {
 			loadError = fmt.Errorf("failed to parse YAML: %w", yamlError)
 			return
 		}
 	})
 
-	return configInstance, loadError
+	return Instance, loadError
 }
 
 func GetConfig() *Config {
-	if configInstance == nil {
+	if Instance == nil {
 		fmt.Println("Config not initialized. Call LoadConfig first.")
 	}
-	return configInstance
+	return Instance
 }

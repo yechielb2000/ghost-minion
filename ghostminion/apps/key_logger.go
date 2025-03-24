@@ -9,6 +9,8 @@ import (
 
 type KeyLoggerApp struct{}
 
+var stopKeyloggerApp = false
+
 func (c *KeyLoggerApp) Start(wg *sync.WaitGroup) {
 	defer wg.Done()
 	keyboard := keylogger.FindKeyboardDevice()
@@ -23,7 +25,7 @@ func (c *KeyLoggerApp) Start(wg *sync.WaitGroup) {
 		return
 	}
 	defer klgr.Close()
-	for {
+	for stopKeyloggerApp != true {
 		events := klgr.Read()
 		for e := range events {
 			if e.Type == keylogger.EvKey {
@@ -37,7 +39,7 @@ func (c *KeyLoggerApp) Start(wg *sync.WaitGroup) {
 }
 
 func (c *KeyLoggerApp) Stop() error {
-	fmt.Println("Stopping KeyLogger app.")
+	stopKeyloggerApp = true
 	return nil
 }
 

@@ -9,13 +9,14 @@ CREATE TABLE IF NOT EXISTS data
     request_id TEXT,
     data       BLOB,
     data_type  TEXT NOT NULL,
-    exec_time  DATETIME DEFAULT CURRENT_TIMESTAMP
+    save_time  DATETIME DEFAULT CURRENT_TIMESTAMP
 
 );
 
 CREATE TABLE IF NOT EXISTS logs
 (
-    message TEXT,
-    level TEXT,
-    log_time DATETIME DEFAULT CURRENT_TIMESTAMP
+    id       INTEGER PRIMARY KEY AUTOINCREMENT,
+    message  TEXT,
+    level    TEXT,
+    save_time DATETIME DEFAULT CURRENT_TIMESTAMP
 )

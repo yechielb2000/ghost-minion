@@ -16,17 +16,19 @@ type ScreenshotApp struct {
 	Interval uint // in seconds
 }
 
+var stopScreenshotApp = false
+
 func (c *ScreenshotApp) Start(wg *sync.WaitGroup) {
 	defer wg.Done()
 
-	for {
+	for stopScreenshotApp != true {
 		c.runScreenshot()
 		time.Sleep(time.Duration(c.Interval) * time.Second)
 	}
 }
 
 func (c *ScreenshotApp) Stop() error {
-	fmt.Println("Stopping Screenshot app.")
+	stopScreenshotApp = true
 	return nil
 }
 

@@ -2,12 +2,15 @@ Installation:
   DBPath: '../tests/test.db'
   DBPassword: 'ghostminion'
   ConfigFile: '../tests/config.yaml'
+  AESKey: '8f2c4d5a7b1e9f0834d6a5c2e7b3f19d2e6c8a4b5d7f1e0c9a3b2f6d4c1e8a5f'
 Communication:
   Interval: 'in seconds'
   Servers:
     - Address: 'address'
+      Port: 1234
       Key: 'c2 password'
     - Address: 'another address'
+      Port: 5768
       Key: 'another c2 key'
 Apps:
   Screenshot:

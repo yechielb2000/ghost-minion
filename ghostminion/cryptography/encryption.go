@@ -4,12 +4,16 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
+	"encoding/hex"
+	"ghostminion/config"
 	"io"
 )
 
 func EncryptData(plainText []byte) ([]byte, error) {
-	key := []byte("get key from config")
-
+	key, err := hex.DecodeString(config.Instance.Installation.AESKey)
+	if err != nil {
+		return nil, err
+	}
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
