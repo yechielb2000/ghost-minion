@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"ghostminion/cryptography"
 	_ "modernc.org/sqlite"
 	"os"
 	"time"
@@ -107,14 +108,20 @@ func RemoveOneRow(table string, requestID string) error {
 }
 
 func WriteDataRow(requestID string, dataType string, data []byte) error {
-	// encrypt data
+	data, err := cryptography.EncryptData(data)
+	if err != nil {
+		return err
+	}
 	query := "INSERT INTO data (request_id, data, data_type) VALUES (?, ?, ?)"
-	_, err := dbInstance.Exec(query, requestID, data, dataType)
+	_, err = dbInstance.Exec(query, requestID, data, dataType)
 	return err
 }
 
-func WriteLogRow(level string, message string) error {
-	// encrypt data
-	_, err := dbInstance.Exec("INSERT INTO logs (message, level) VALUES (?, ?)", message, level)
+func WriteLogRow(level string, message []byte) error {
+	message, err := cryptography.EncryptData(message)
+	if err != nil {
+		return err
+	}
+	_, err = dbInstance.Exec("INSERT INTO logs (message, level) VALUES (?, ?)", message, level)
 	return err
 }
