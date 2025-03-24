@@ -116,7 +116,7 @@ func WriteDataRow(requestID string, dataType string, data []byte) error {
 
 func WriteLogRow(log string) error {
 	// encrypt data
-	query := fmt.Sprintf("INSERT INTO logs (message, level) VALUES (?, ?, ?, ?)")
+	query := fmt.Sprintf("INSERT INTO logs (message, level) VALUES (?, ?)")
 	_, err := dbInstance.Exec(query, log)
 	return err
 }
