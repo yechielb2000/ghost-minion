@@ -15,7 +15,8 @@ CREATE TABLE IF NOT EXISTS data
 
 CREATE TABLE IF NOT EXISTS logs
 (
-    message TEXT,
-    level TEXT,
+    id       INTEGER PRIMARY KEY AUTOINCREMENT,
+    message  TEXT,
+    level    TEXT,
     log_time DATETIME DEFAULT CURRENT_TIMESTAMP
 )
