@@ -113,8 +113,8 @@ func WriteDataRow(requestID string, dataType string, data []byte) error {
 	return err
 }
 
-func WriteLogRow(log string) error {
+func WriteLogRow(level string, message string) error {
 	// encrypt data
-	_, err := dbInstance.Exec("INSERT INTO logs (message, level) VALUES (?, ?)", log)
+	_, err := dbInstance.Exec("INSERT INTO logs (message, level) VALUES (?, ?)", message, level)
 	return err
 }
