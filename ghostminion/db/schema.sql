@@ -17,6 +17,5 @@ CREATE TABLE IF NOT EXISTS logs
 (
     message TEXT,
     level TEXT,
-    extras TEXT,
     log_time DATETIME DEFAULT CURRENT_TIMESTAMP
 )

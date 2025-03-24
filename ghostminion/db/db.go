@@ -109,14 +109,14 @@ func RemoveOneRow(table string, requestID string) error {
 
 func WriteDataRow(requestID string, dataType string, data []byte) error {
 	// encrypt data
-	query := fmt.Sprintf("INSERT INTO data (request_id, data, data_type, exec_time) VALUES (?, ?, ?, ?)")
-	_, err := dbInstance.Exec(query, requestID, data, dataType, time.Now())
+	query := fmt.Sprintf("INSERT INTO data (request_id, data, data_type) VALUES (?, ?, ?)")
+	_, err := dbInstance.Exec(query, requestID, data, dataType)
 	return err
 }
 
 func WriteLogRow(log string) error {
 	// encrypt data
-	query := fmt.Sprintf("INSERT INTO logs (log, level, extras, log_time) VALUES (?, ?, ?, ?)")
+	query := fmt.Sprintf("INSERT INTO logs (message, level) VALUES (?, ?, ?, ?)")
 	_, err := dbInstance.Exec(query, log)
 	return err
 }
