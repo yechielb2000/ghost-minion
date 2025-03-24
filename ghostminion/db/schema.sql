@@ -5,9 +5,18 @@ CREATE TABLE IF NOT EXISTS metadata
 
 CREATE TABLE IF NOT EXISTS data
 (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
     request_id TEXT,
     data       BLOB,
-    data_type  TEXT,
+    data_type  TEXT NOT NULL,
     exec_time  TIMESTAMP
 
 );
+
+CREATE TABLE IF NOT EXISTS logs
+(
+    message TEXT,
+    level TEXT,
+    extras TEXT,
+    log_time TIMESTAMP
+)
