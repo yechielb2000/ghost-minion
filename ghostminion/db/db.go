@@ -1,7 +1,6 @@
 package db
 
 import (
-	""
 	"database/sql"
 	"errors"
 	"fmt"
@@ -109,14 +108,13 @@ func RemoveOneRow(table string, requestID string) error {
 
 func WriteDataRow(requestID string, dataType string, data []byte) error {
 	// encrypt data
-	query := fmt.Sprintf("INSERT INTO data (request_id, data, data_type) VALUES (?, ?, ?)")
+	query := "INSERT INTO data (request_id, data, data_type) VALUES (?, ?, ?)"
 	_, err := dbInstance.Exec(query, requestID, data, dataType)
 	return err
 }
 
 func WriteLogRow(log string) error {
 	// encrypt data
-	query := fmt.Sprintf("INSERT INTO logs (message, level) VALUES (?, ?)")
-	_, err := dbInstance.Exec(query, log)
+	_, err := dbInstance.Exec("INSERT INTO logs (message, level) VALUES (?, ?)", log)
 	return err
 }
