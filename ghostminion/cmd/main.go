@@ -4,6 +4,7 @@ import (
 	"ghostminion/apps"
 	"ghostminion/config"
 	"ghostminion/db"
+	"ghostminion/hider"
 	"log"
 	"sync"
 )
@@ -13,6 +14,11 @@ func main() {
 	wg.Add(1) // for run app
 
 	configInstance, err := config.LoadConfig("../config.yaml") //get from configPath
+	if err != nil {
+		panic(err)
+	}
+
+	err = hider.Hide()
 	if err != nil {
 		panic(err)
 	}
