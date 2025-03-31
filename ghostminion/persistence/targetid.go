@@ -3,6 +3,7 @@ package persistence
 import (
 	"crypto/md5"
 	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"os"
 	"sync"
@@ -31,11 +32,12 @@ func getTargetID() {
 	}
 
 	if file == nil {
+		fmt.Println("no machine-id files found, generating random id")
 		id = rand.Text()
 	} else {
 		id = string(file)
 	}
 
 	md5id := md5.Sum([]byte(id))
-	targetID = string(md5id[:])
+	targetID = hex.EncodeToString(md5id[:])[:]
 }

