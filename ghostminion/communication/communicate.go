@@ -44,7 +44,6 @@ func canCommunicate(client http.Client, serverConfig config.ServerConfig) bool {
 }
 
 func communicate() []byte {
-	serverConfig = getRandomServer()
 	client := &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
@@ -100,9 +99,16 @@ func askForTodos(client *http.Client) []byte {
 	return todos
 }
 
-func getRandomServer() config.ServerConfig {
-	servers := config.Instance.Communication.Servers
+func getRandomServer() *config.ServerConfig {
+	configInstance, err := config.GetConfig()
+	if err != nil {
+		return nil
+	}
+	servers := configInstance.Communication.Servers
+	if len(servers) == 0 {
+		return nil
+	}
 	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
 	index := rng.Intn(len(servers))
-	return servers[index]
+	return &servers[index]
 }

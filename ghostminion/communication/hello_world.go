@@ -2,6 +2,11 @@ package communication
 
 func SendHelloFirstTime(targetID string) {
 	/*
-		send target ID to C2 for registering (after a challenge, of course).
+		send this info to the C2:
+			- Agent ID
+			- Challenge key
+			- birth time
+			- Agent version
+			- Agent type
 	*/
 }
