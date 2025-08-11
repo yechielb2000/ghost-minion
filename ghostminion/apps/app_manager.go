@@ -10,7 +10,7 @@ import (
 type App interface {
 	Start(wg *sync.WaitGroup)
 	Stop() error
-	Validate() error // Validation before start
+	Validate() error
 }
 
 type AppManager struct {
@@ -18,10 +18,18 @@ type AppManager struct {
 	mu   sync.Mutex
 }
 
-func NewAppManager() *AppManager {
-	return &AppManager{
-		apps: make(map[string]App),
-	}
+var (
+	appManagerInstance *AppManager
+	once               sync.Once
+)
+
+func GetAppManagerInstance() *AppManager {
+	once.Do(func() {
+		appManagerInstance = &AppManager{
+			apps: make(map[string]App),
+		}
+	})
+	return appManagerInstance
 }
 
 func (am *AppManager) GetApp(name string) (App, error) {
@@ -49,7 +57,7 @@ func (am *AppManager) AddApp(name string, app App) {
 	am.mu.Lock()
 	defer am.mu.Unlock()
 	if am.apps[name] != nil {
-		log.Printf("App %s was already exists. Overwriting app", name)
+		log.Printf("App %s already exists. Overwriting app", name)
 	}
 	am.apps[name] = app
 }

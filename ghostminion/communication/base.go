@@ -2,6 +2,8 @@ package communication
 
 import (
 	"bytes"
+	"fmt"
+	"ghostminion/config"
 	"io"
 	"net/http"
 	"time"
@@ -18,6 +20,10 @@ const (
 	HEAD    HTTPMethod = "HEAD"
 	OPTIONS HTTPMethod = "OPTIONS"
 )
+
+func CreateRoute(serverConfig config.ServerConfig, route string) string {
+	return fmt.Sprintf("https://%s:%d/%s", serverConfig.Address, serverConfig.Port, route)
+}
 
 func SendRequest(method HTTPMethod, url string, headers map[string]string, body []byte) ([]byte, int, error) {
 	req, err := http.NewRequest(string(method), url, bytes.NewBuffer(body))

@@ -9,7 +9,7 @@ import (
 	"net/http"
 )
 
-func CanCommunicate(serverConfig *config.ServerConfig) bool {
+func CanCommunicate(serverConfig config.ServerConfig) bool {
 	configInstance, _ := config.GetConfig()
 	agentId := configInstance.AgentID
 	challenge, err := getChallenge(agentId, serverConfig)
@@ -30,7 +30,7 @@ func CanCommunicate(serverConfig *config.ServerConfig) bool {
 	return true
 }
 
-func getChallenge(agentID string, serverConfig *config.ServerConfig) (string, error) {
+func getChallenge(agentID string, serverConfig config.ServerConfig) (string, error) {
 	payload := map[string]string{"agent_id": agentID}
 	body, err := json.Marshal(payload)
 	if err != nil {
@@ -59,13 +59,14 @@ func getChallenge(agentID string, serverConfig *config.ServerConfig) (string, er
 
 	return result.Challenge, nil
 }
+
 func computeHMAC(message string, key []byte) string {
 	mac := hmac.New(sha256.New, key)
 	mac.Write([]byte(message))
 	return fmt.Sprintf("%x", mac.Sum(nil))
 }
 
-func sendResponse(agentID string, hmac string, serverConfig *config.ServerConfig) error {
+func sendResponse(agentID string, hmac string, serverConfig config.ServerConfig) error {
 	payload := map[string]string{
 		"agent_id": agentID,
 		"hmac":     hmac,

