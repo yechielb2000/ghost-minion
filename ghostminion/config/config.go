@@ -1,9 +1,9 @@
 package config
 
 import (
-	"errors"
 	"fmt"
 	"gopkg.in/yaml.v3"
+	"log"
 	"os"
 	"sync"
 )
@@ -67,7 +67,7 @@ func LoadConfig(path string) (*Config, error) {
 func GetConfig() (*Config, error) {
 	var errorMessage error
 	if instance == nil {
-		errorMessage = errors.New("config not initialized. Call LoadConfig first")
+		log.Fatal("config not initialized. Call LoadConfig first")
 	}
 	return instance, errorMessage
 }

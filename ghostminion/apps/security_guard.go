@@ -38,6 +38,8 @@ func (c *SecurityGuardApp) Start(wg *sync.WaitGroup) {
 		- someone wrote the process name in its bash history
 		- any of the files that was supposed to be in its place is not anymore
 		- the cpu of the target has increase too much because of our process
+
+		if the
 	*/
 }
 

