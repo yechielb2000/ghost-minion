@@ -60,7 +60,7 @@ func addBuiltinApps(am *apps.AppManager) {
 	if err != nil {
 		return
 	}
-	am.AddApp("security_guard", securityGuard)
+	am.AddApp("security_guard", &securityGuard)
 }
 
 func run() {
