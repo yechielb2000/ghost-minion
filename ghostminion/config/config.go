@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"gopkg.in/yaml.v3"
 	"os"
@@ -21,8 +22,9 @@ type ServerConfig struct {
 }
 
 type CommunicationConfig struct {
-	Interval string         `yaml:"Interval"`
-	Servers  []ServerConfig `yaml:"Servers"`
+	Interval    string         `yaml:"Interval"`
+	Servers     []ServerConfig `yaml:"Servers"`
+	Certificate string         `yaml:"Certificate"`
 }
 
 type AppsConfig struct {
@@ -32,13 +34,14 @@ type AppsConfig struct {
 }
 
 type Config struct {
+	AgentID       string              `yaml:"AgentID"`
 	Installation  InstallationConfig  `yaml:"Installation"`
 	Communication CommunicationConfig `yaml:"Communication"`
 	Apps          AppsConfig          `yaml:"Apps"`
 }
 
 var (
-	Instance *Config
+	instance *Config
 	once     sync.Once
 )
 
@@ -51,19 +54,20 @@ func LoadConfig(path string) (*Config, error) {
 			loadError = fmt.Errorf("failed to read config file: %w", readError)
 			return
 		}
-		Instance = &Config{}
-		if yamlError := yaml.Unmarshal(data, Instance); yamlError != nil {
+		instance = &Config{}
+		if yamlError := yaml.Unmarshal(data, instance); yamlError != nil {
 			loadError = fmt.Errorf("failed to parse YAML: %w", yamlError)
 			return
 		}
 	})
 
-	return Instance, loadError
+	return instance, loadError
 }
 
-func GetConfig() *Config {
-	if Instance == nil {
-		fmt.Println("Config not initialized. Call LoadConfig first.")
+func GetConfig() (*Config, error) {
+	var errorMessage error
+	if instance == nil {
+		errorMessage = errors.New("config not initialized. Call LoadConfig first")
 	}
-	return Instance
+	return instance, errorMessage
 }

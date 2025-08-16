@@ -89,7 +89,12 @@ func ReadOldestDataRow(table string) (map[string]interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer columns.Close()
+	defer func(columns *sql.Rows) {
+		err := columns.Close()
+		if err != nil {
+
+		}
+	}(columns)
 
 	var colNames []string
 	for columns.Next() {

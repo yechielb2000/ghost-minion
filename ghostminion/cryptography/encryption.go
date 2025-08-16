@@ -10,7 +10,11 @@ import (
 )
 
 func EncryptData(plainText []byte) ([]byte, error) {
-	key, err := hex.DecodeString(config.Instance.Installation.AESKey)
+	configInstance, err := config.GetConfig()
+	if err != nil {
+		return []byte{}, err
+	}
+	key, err := hex.DecodeString(configInstance.Installation.AESKey)
 	if err != nil {
 		return nil, err
 	}

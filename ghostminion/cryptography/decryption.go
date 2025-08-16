@@ -9,11 +9,15 @@ import (
 )
 
 func DecryptData(cipherText []byte) ([]byte, error) {
-	key, err := hex.DecodeString(config.Instance.Installation.AESKey)
+	configInstance, err := config.GetConfig()
+	if err != nil {
+		return []byte{}, err
+	}
+	key, err := hex.DecodeString(configInstance.Installation.AESKey)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
