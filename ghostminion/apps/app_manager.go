@@ -10,6 +10,7 @@ import (
 type AppManager struct {
 	apps map[string]App
 	mu   sync.Mutex
+	wg   sync.WaitGroup
 }
 
 var (
@@ -36,40 +37,40 @@ func (am *AppManager) GetApp(name string) (App, error) {
 	return app, nil
 }
 
-func (am *AppManager) ListApps() []string {
+func (am *AppManager) ListApps() map[string]App {
 	am.mu.Lock()
 	defer am.mu.Unlock()
-
-	var appNames []string
-	for name := range am.apps {
-		appNames = append(appNames, name)
-	}
-	return appNames
+	return am.apps
 }
 
-func (am *AppManager) AddApp(name string, app App) {
+func (am *AppManager) StartApp(name string, app App) {
 	am.mu.Lock()
 	defer am.mu.Unlock()
+
 	if am.apps[name] != nil {
-		log.Printf("App %s already exists. Overwriting app", name)
+		log.Printf("App \"%s\" already exists. Overwriting app", name)
 	}
+
+	am.wg.Add(1)
+	go app.Start(&am.wg)
 	am.apps[name] = app
 }
 
-func (am *AppManager) RemoveApp(name string) {
+func (am *AppManager) StopApp(name string) error {
 	am.mu.Lock()
 	defer am.mu.Unlock()
+	app := am.apps[name]
+	if err := app.Stop(); err != nil {
+		return err
+	}
+	am.wg.Done()
 	delete(am.apps, name)
+	return nil
 }
 
-func (am *AppManager) StartAll(wg *sync.WaitGroup) {
-	am.mu.Lock()
-	defer am.mu.Unlock()
-
+func (am *AppManager) StartAll() {
 	for name, app := range am.apps {
-		wg.Add(1)
-		go app.Start(wg)
-		fmt.Printf("Started app: %s\n", name)
+		am.StartApp(name, app)
 	}
 }
 
@@ -77,8 +78,8 @@ func (am *AppManager) StopAll() {
 	am.mu.Lock()
 	defer am.mu.Unlock()
 
-	for name, app := range am.apps {
-		err := app.Stop()
+	for name, _ := range am.apps {
+		err := am.StopApp(name)
 		if err != nil {
 			log.Printf("Error stopping app: %s\n", name)
 		} else {

