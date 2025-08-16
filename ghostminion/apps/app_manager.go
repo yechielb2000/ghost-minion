@@ -88,7 +88,7 @@ func (am *AppManager) StopAll() {
 	}
 }
 
-func (am *AppManager) AddTaskAsApp(appData AppData) error {
+func (am *AppManager) NewAppFactory(appData AppData) error {
 	var app App = nil
 	var err error = nil
 
