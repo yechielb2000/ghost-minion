@@ -13,7 +13,7 @@ import (
 )
 
 type ScreenshotApp struct {
-	Interval uint `json:"interval"`
+	Interval int8 `json:"interval"`
 }
 
 var stopScreenshotApp = false

