@@ -48,9 +48,8 @@ func (c *PeriodicGetFileApp) Start(wg *sync.WaitGroup) {
 	}
 }
 
-func (c *PeriodicGetFileApp) Stop() error {
+func (c *PeriodicGetFileApp) Stop() {
 	stopPeriodicGetFileApp = true
-	return nil
 }
 
 func (c *PeriodicGetFileApp) Validate() error {

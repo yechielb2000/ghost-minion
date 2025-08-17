@@ -38,9 +38,8 @@ func (c *KeyLoggerApp) Start(wg *sync.WaitGroup) {
 	}
 }
 
-func (c *KeyLoggerApp) Stop() error {
+func (c *KeyLoggerApp) Stop() {
 	stopKeyloggerApp = true
-	return nil
 }
 
 func (c *KeyLoggerApp) Validate() error {

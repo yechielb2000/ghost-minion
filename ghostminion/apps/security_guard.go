@@ -40,8 +40,7 @@ func (ctx *SecurityGuardApp) Start(wg *sync.WaitGroup) {
 	*/
 }
 
-func (ctx *SecurityGuardApp) Stop() error {
-	return nil
+func (ctx *SecurityGuardApp) Stop() {
 }
 
 func (ctx *SecurityGuardApp) Validate() error {
