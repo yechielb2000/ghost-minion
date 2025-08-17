@@ -33,6 +33,7 @@ func Routine(taskCh chan<- apps.AppData) {
 		if !CanCommunicate(serverConfig) {
 			lgr.Error("Can't communicate with server", serverConfig.Address)
 		} else {
+
 			sendData("logs")
 			sendData("data")
 			tasks := fetchTasks(serverConfig)
