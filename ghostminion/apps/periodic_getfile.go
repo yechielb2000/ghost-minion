@@ -24,23 +24,23 @@ func (c *PeriodicGetFileApp) Start(wg *sync.WaitGroup) {
 	for stopPeriodicGetFileApp != true {
 		fileContent, err := GetFile(c.Path)
 		if err != nil {
-			fmt.Println("error: ", err)
+			lgr.Error("Error getting file content: ", err)
 			continue
 		}
 		if c.CheckMD5 {
 			command := fmt.Sprintf("md5sum %v", c.Path)
 			fileMD5Output, err := RunCommand(command)
 			if err != nil {
-				fmt.Println("error calculating MD5: ", err)
+				lgr.Error("Error running MD5 command: ", err)
 				continue
 			}
-			fileMD5 := string(fileMD5Output) // Convert output to a string
+			fileMD5 := string(fileMD5Output)
 			if currentFileMD5 != fileMD5 {
-				fmt.Println("File content changed. MD5: ", fileMD5)
+				lgr.Warn("File MD5 mismatch: Expected %v, got %v", currentFileMD5, fileMD5)
 				currentFileMD5 = fileMD5
 				err = db.WriteDataRow("", db.FilesDataType, fileContent) // replace requestId
 				if err != nil {
-					fmt.Printf("error: %v", err)
+					lgr.Error("Error writing file data: ", err)
 				}
 			}
 		}

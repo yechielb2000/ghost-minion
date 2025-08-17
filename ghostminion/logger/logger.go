@@ -1,14 +1,25 @@
 package logger
 
 import (
+	"ghostminion/config"
 	"log"
 	"os"
 	"sync"
 )
 
+type LogLevel int
+
+const (
+	DEBUG LogLevel = iota
+	INFO
+	WARN
+	ERROR
+)
+
 type Logger struct {
 	instance *log.Logger
 	file     *os.File
+	level    LogLevel
 }
 
 var (
@@ -16,13 +27,18 @@ var (
 	once   sync.Once
 )
 
-func Init(filePath string) (*Logger, error) {
-	var err error
+func GetLogger() *Logger {
 	once.Do(func() {
+		c, _ := config.GetConfig()
 		var f *os.File
-		f, err = os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
-		if err != nil {
-			return
+		var err error
+
+		if c != nil && c.Installation.LogFilePath != "" {
+			f, err = os.OpenFile(c.Installation.LogFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+		}
+
+		if err != nil || f == nil {
+			f = os.Stderr
 		}
 
 		logger = &Logger{
@@ -30,29 +46,17 @@ func Init(filePath string) (*Logger, error) {
 			file:     f,
 		}
 	})
-
-	return logger, err
-}
-
-func GetLogger() *Logger {
 	return logger
 }
 
-func (l *Logger) Close() error {
-	if l.file != nil {
-		return l.file.Close()
+func (lgr *Logger) Debug(v ...any) { lgr.instance.SetPrefix("[DEBUG] "); lgr.instance.Println(v...) }
+func (lgr *Logger) Info(v ...any)  { lgr.instance.SetPrefix("[INFO] "); lgr.instance.Println(v...) }
+func (lgr *Logger) Warn(v ...any)  { lgr.instance.SetPrefix("[WARN] "); lgr.instance.Println(v...) }
+func (lgr *Logger) Error(v ...any) { lgr.instance.SetPrefix("[ERROR] "); lgr.instance.Println(v...) }
+
+func (lgr *Logger) Close() error {
+	if lgr.file != nil && lgr.file != os.Stderr {
+		return lgr.file.Close()
 	}
 	return nil
 }
-
-// Example usage
-// func main() {
-//     l, err := logger.Init("app.log")
-//     if err != nil {
-//         panic(err)
-//     }
-//     defer l.Close()
-//
-//     log := logger.GetLogger()
-//     log.instance.Println("Application started")
-// }

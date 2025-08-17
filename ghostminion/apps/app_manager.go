@@ -2,8 +2,6 @@ package apps
 
 import (
 	"errors"
-	"fmt"
-	"log"
 	"sync"
 )
 
@@ -48,7 +46,7 @@ func (am *AppManager) StartApp(name string, app App) {
 	defer am.mu.Unlock()
 
 	if am.apps[name] != nil {
-		log.Printf("App \"%s\" already exists. Overwriting app", name)
+		lgr.Warn("App " + name + " already exists. Overwriting app")
 	}
 
 	am.wg.Add(1)
@@ -56,16 +54,17 @@ func (am *AppManager) StartApp(name string, app App) {
 	am.apps[name] = app
 }
 
-func (am *AppManager) StopApp(name string) error {
+func (am *AppManager) StopApp(name string) {
 	am.mu.Lock()
 	defer am.mu.Unlock()
 	app := am.apps[name]
-	if err := app.Stop(); err != nil {
-		return err
+	if app == nil {
+		lgr.Warn("am: app " + name + " not found")
+		return
 	}
+	app.Stop()
 	am.wg.Done()
 	delete(am.apps, name)
-	return nil
 }
 
 func (am *AppManager) StartAll() {
@@ -77,13 +76,7 @@ func (am *AppManager) StartAll() {
 func (am *AppManager) StopAll() {
 	am.mu.Lock()
 	defer am.mu.Unlock()
-
 	for name, _ := range am.apps {
-		err := am.StopApp(name)
-		if err != nil {
-			log.Printf("Error stopping app: %s\n", name)
-		} else {
-			fmt.Printf("Stopped app: %s\n", name)
-		}
+		am.StopApp(name)
 	}
 }

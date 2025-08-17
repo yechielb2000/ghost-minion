@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"ghostminion/config"
+	"ghostminion/logger"
 	"io"
 	"net/http"
 	"time"
@@ -20,6 +21,8 @@ const (
 	HEAD    HTTPMethod = "HEAD"
 	OPTIONS HTTPMethod = "OPTIONS"
 )
+
+var lgr = logger.GetLogger()
 
 func CreateRoute(serverConfig config.ServerConfig, route string) string {
 	return fmt.Sprintf("https://%s:%d/%s", serverConfig.Address, serverConfig.Port, route)

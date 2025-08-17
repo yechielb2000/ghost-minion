@@ -1,9 +1,10 @@
 package config
 
 import (
+	"errors"
 	"fmt"
+	"ghostminion/logger"
 	"gopkg.in/yaml.v3"
-	"log"
 	"os"
 	"sync"
 )
@@ -44,6 +45,7 @@ var (
 	instance *Config
 	once     sync.Once
 	mu       sync.Mutex
+	lgr      = logger.GetLogger()
 )
 
 func LoadConfig(path string) (*Config, error) {
@@ -62,34 +64,32 @@ func LoadConfig(path string) (*Config, error) {
 		}
 	})
 
+	if loadError != nil {
+		lgr.Error("Failed to load config", loadError)
+	}
+
 	return instance, loadError
 }
 
 func GetConfig() (*Config, error) {
-	var errorMessage error
 	if instance == nil {
-		log.Fatal("config not initialized. Call LoadConfig first")
+		return nil, errors.New("config not initialized. Call LoadConfig first")
 	}
-	return instance, errorMessage
+	return instance, nil
 }
 
 func SaveConfig(path string) error {
 	data, err := yaml.Marshal(instance)
 	if err != nil {
+		lgr.Error("Got error while marshalling config", err)
 		return err
 	}
-
 	return os.WriteFile(path, data, 0600)
 }
 
 func UpdateConfig(savePath string, updateFn func(c *Config)) error {
 	mu.Lock()
 	defer mu.Unlock()
-
-	if instance == nil {
-		return fmt.Errorf("config instance is nil")
-	}
-
 	updateFn(instance)
 	return SaveConfig(savePath)
 }

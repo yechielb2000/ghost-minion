@@ -3,6 +3,7 @@ package apps
 import (
 	"encoding/json"
 	"errors"
+	"ghostminion/logger"
 	"sync"
 )
 
@@ -29,6 +30,8 @@ type App interface {
 	Stop()
 	Validate() error
 }
+
+var lgr = logger.GetLogger()
 
 func NewAppFactory(appData AppData) (App, error) {
 	var app App = nil
