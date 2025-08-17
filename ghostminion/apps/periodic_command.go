@@ -3,15 +3,16 @@ package apps
 import (
 	"fmt"
 	"ghostminion/db"
-	"ghostminion/executor"
+	"os/exec"
 	"sync"
+	"syscall"
 	"time"
 )
 
 type PeriodicCommandApp struct {
-	Command  string
-	Timeout  uint // in seconds default is 120
-	Interval uint // in seconds
+	Command  string `json:"Command"`
+	Timeout  uint   `json:"Timeout"`
+	Interval uint   `json:"Interval"`
 }
 
 var stopPeriodicCommandApp = false
@@ -20,7 +21,7 @@ func (c *PeriodicCommandApp) Start(wg *sync.WaitGroup) {
 	defer wg.Done()
 	for stopPeriodicCommandApp != true {
 		fmt.Println("Running command: ", c.Command)
-		commandOutput, err := executor.RunCommand(c.Command)
+		commandOutput, err := RunCommand(c.Command)
 		if err != nil {
 			fmt.Println("error: ", err)
 		}
@@ -36,4 +37,14 @@ func (c *PeriodicCommandApp) Stop() error {
 
 func (c *PeriodicCommandApp) Validate() error {
 	return nil
+}
+
+func RunCommand(command string) ([]byte, error) {
+	cmd := exec.Command(command)
+	cmd.SysProcAttr = &syscall.SysProcAttr{ParentProcess: 0}
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return output, err
+	}
+	return output, nil
 }

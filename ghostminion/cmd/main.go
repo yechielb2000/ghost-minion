@@ -47,7 +47,7 @@ func main() {
 	})
 	appManager.StartApp("security_guard", &apps.SecurityGuardApp{
 		FilesExistence: []string{
-			configInstance.Installation.ConfigFile,
+			configInstance.Installation.LogFilePath,
 			configInstance.Installation.DBPath,
 		},
 	})
