@@ -13,7 +13,7 @@ type Telemetry struct {
 	CurrentTimestamp int64  `yaml:"CurrentTimestamp"`
 }
 
-func NewTelemetry(firstTime bool, isAlive bool) (Telemetry, error) {
+func NewTelemetry(isAlive bool) (Telemetry, error) {
 	c, err := config.GetConfig()
 	if err != nil {
 		return Telemetry{}, err
@@ -32,10 +32,12 @@ func SendTelemetry(serverConfig config.ServerConfig, telemetry Telemetry) ([]byt
 	if err != nil {
 		return []byte{}, 0, err
 	}
-	route := CreateRoute(serverConfig, "receive")
-	return SendRequest(POST,
-		route,
+	return SendRequest(
+		POST,
+		CreateRoute(serverConfig, "receive"),
 		map[string]string{
 			"Content-Type": "application/json",
-		}, jsonTelemetry)
+		},
+		jsonTelemetry,
+	)
 }

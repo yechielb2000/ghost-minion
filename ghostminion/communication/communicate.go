@@ -33,6 +33,13 @@ func Routine(taskCh chan<- apps.AppData) {
 		if !CanCommunicate(serverConfig) {
 			lgr.Error("Can't communicate with server", serverConfig.Address)
 		} else {
+			telemetry, err := NewTelemetry(true)
+			if err != nil {
+				lgr.Error("Can't create telemetry", err.Error())
+			}
+			if _, _, err = SendTelemetry(serverConfig, telemetry); err != nil {
+				lgr.Error("Can't send telemetry", err.Error())
+			}
 
 			sendData("logs")
 			sendData("data")
