@@ -11,7 +11,7 @@ import (
 type SecurityGuardApp struct {
 	isSafe         bool
 	mu             sync.Mutex
-	FilesExistence []string
+	FilesExistence []string `json:"FilesExistence"`
 }
 
 func (ctx *SecurityGuardApp) IsSafe() bool {

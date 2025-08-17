@@ -4,16 +4,16 @@ import (
 	"errors"
 	"fmt"
 	"ghostminion/db"
-	"ghostminion/executor"
+	"os"
 	"sync"
 	"time"
 )
 
 type PeriodicGetFileApp struct {
-	Path     string
-	MaxSize  int  // maximum allowed size in bytes.
-	Interval int  // in seconds
-	CheckMD5 bool // check if a file was changed since last run.
+	Path     string `json:"Path"`
+	MaxSize  int    `json:"MaxSize"`
+	Interval int    `json:"Interval"`
+	CheckMD5 bool   `json:"CheckMD5"`
 }
 
 var stopPeriodicGetFileApp = false
@@ -22,14 +22,14 @@ func (c *PeriodicGetFileApp) Start(wg *sync.WaitGroup) {
 	defer wg.Done()
 	currentFileMD5 := ""
 	for stopPeriodicGetFileApp != true {
-		fileContent, err := executor.GetFile(c.Path)
+		fileContent, err := GetFile(c.Path)
 		if err != nil {
 			fmt.Println("error: ", err)
 			continue
 		}
 		if c.CheckMD5 {
 			command := fmt.Sprintf("md5sum %v", c.Path)
-			fileMD5Output, err := executor.RunCommand(command)
+			fileMD5Output, err := RunCommand(command)
 			if err != nil {
 				fmt.Println("error calculating MD5: ", err)
 				continue
@@ -64,4 +64,12 @@ func (c *PeriodicGetFileApp) Validate() error {
 		return errors.New("interval must be greater than 0")
 	}
 	return nil
+}
+
+func GetFile(path string) ([]byte, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
 }

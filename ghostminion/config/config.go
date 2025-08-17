@@ -9,10 +9,10 @@ import (
 )
 
 type InstallationConfig struct {
-	DBPath     string `yaml:"DBPath"`
-	ConfigFile string `yaml:"ConfigFile"`
-	DBPassword string `yaml:"DBPassword"`
-	AESKey     string `yaml:"AESKey"`
+	DBPath      string `yaml:"DBPath"`
+	LogFilePath string `yaml:"LogFilePath"`
+	DBPassword  string `yaml:"DBPassword"`
+	AESKey      string `yaml:"AESKey"`
 }
 
 type ServerConfig struct {
@@ -43,6 +43,7 @@ type Config struct {
 var (
 	instance *Config
 	once     sync.Once
+	mu       sync.Mutex
 )
 
 func LoadConfig(path string) (*Config, error) {
@@ -70,4 +71,25 @@ func GetConfig() (*Config, error) {
 		log.Fatal("config not initialized. Call LoadConfig first")
 	}
 	return instance, errorMessage
+}
+
+func SaveConfig(path string) error {
+	data, err := yaml.Marshal(instance)
+	if err != nil {
+		return err
+	}
+
+	return os.WriteFile(path, data, 0600)
+}
+
+func UpdateConfig(savePath string, updateFn func(c *Config)) error {
+	mu.Lock()
+	defer mu.Unlock()
+
+	if instance == nil {
+		return fmt.Errorf("config instance is nil")
+	}
+
+	updateFn(instance)
+	return SaveConfig(savePath)
 }

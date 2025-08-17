@@ -9,14 +9,14 @@ import (
 )
 
 type ConnectOnlineApp struct {
-	port int
-	/* add password connection */
+	Port     int    `json:"Port,omitempty"`
+	Password string `json:"Password,omitempty"`
 }
 
 var stopConnectOnlineApp = false
 
 func (c *ConnectOnlineApp) Start(wg *sync.WaitGroup) {
-	address := fmt.Sprintf(":%d", c.port)
+	address := fmt.Sprintf(":%d", c.Port)
 	ln, err := net.Listen("tcp", address)
 	if err != nil {
 		fmt.Println("Error:", err)
@@ -45,7 +45,7 @@ func (c *ConnectOnlineApp) Stop() error {
 }
 
 func (c *ConnectOnlineApp) Validate() error {
-	if c.port < 1 || c.port > 65535 {
+	if c.Port < 1 || c.Port > 65535 {
 		return fmt.Errorf("port must be between 1 and 65535")
 	}
 	return nil

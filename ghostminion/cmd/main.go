@@ -10,9 +10,13 @@ import (
 	"log"
 )
 
+const (
+	configFilePath = "../tests/config.yaml"
+)
+
 func main() {
 
-	configInstance, err := config.LoadConfig("../config.yaml")
+	configInstance, err := config.LoadConfig(configFilePath)
 	if err != nil {
 		panic(err)
 	}
@@ -28,6 +32,12 @@ func main() {
 	}
 
 	targetId := persistence.GenerateTargetID()
+	err = config.UpdateConfig(configFilePath, func(c *config.Config) {
+		c.AgentID = targetId
+	})
+	if err != nil {
+		return
+	}
 	fmt.Println("targetId:", targetId)
 
 	appManager := apps.GetAppManagerInstance()
@@ -37,15 +47,15 @@ func main() {
 	})
 	appManager.StartApp("security_guard", &apps.SecurityGuardApp{
 		FilesExistence: []string{
-			configInstance.Installation.ConfigFile,
+			configInstance.Installation.LogFilePath,
 			configInstance.Installation.DBPath,
 		},
 	})
-	appManager.StartAll()
 
 	taskCh := make(chan apps.AppData)
 	go communication.Routine(taskCh)
 	for task := range taskCh {
+		// TODO: handle config change
 		if app, err := apps.NewAppFactory(task); err != nil {
 			log.Print(err)
 		} else {
