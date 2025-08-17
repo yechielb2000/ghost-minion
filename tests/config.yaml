@@ -1,0 +1,19 @@
+AgentID: 1887695e66008ecbde2e12b382b1e781
+Installation:
+    DBPath: ../tests/test.db
+    ConfigFile: ../tests/config.yaml
+    DBPassword: ghostminion
+    AESKey: 8f2c4d5a7b1e9f0834d6a5c2e7b3f19d2e6c8a4b5d7f1e0c9a3b2f6d4c1e8a5f
+Communication:
+    Interval: "500"
+    Servers:
+        - Address: 127.0.0.1
+          Port: 1234
+          Key: c2 password
+        - Address: another address
+          Port: 5768
+          Key: another c2 key
+    Certificate: ""
+Apps:
+    Screenshot:
+        Interval: 300
