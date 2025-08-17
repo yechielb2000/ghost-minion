@@ -39,9 +39,8 @@ func (c *ConnectOnlineApp) Start(wg *sync.WaitGroup) {
 	}
 }
 
-func (c *ConnectOnlineApp) Stop() error {
+func (c *ConnectOnlineApp) Stop() {
 	stopConnectOnlineApp = true
-	return nil
 }
 
 func (c *ConnectOnlineApp) Validate() error {

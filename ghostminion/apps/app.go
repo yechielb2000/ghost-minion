@@ -26,7 +26,7 @@ type AppData struct {
 
 type App interface {
 	Start(wg *sync.WaitGroup)
-	Stop() error
+	Stop()
 	Validate() error
 }
 
@@ -51,7 +51,7 @@ func NewAppFactory(appData AppData) (App, error) {
 		app, err = newApp[PeriodicGetFileApp](appData.Params)
 		break
 	case ConnectOnlineTask:
-		app, err = newApp[ScreenshotApp](appData.Params)
+		app, err = newApp[ConnectOnlineApp](appData.Params)
 		break
 	default:
 		err = errors.New("unknown app type")

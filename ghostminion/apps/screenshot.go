@@ -27,9 +27,8 @@ func (c *ScreenshotApp) Start(wg *sync.WaitGroup) {
 	}
 }
 
-func (c *ScreenshotApp) Stop() error {
+func (c *ScreenshotApp) Stop() {
 	stopScreenshotApp = true
-	return nil
 }
 
 func (c *ScreenshotApp) Validate() error {

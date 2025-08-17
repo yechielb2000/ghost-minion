@@ -19,7 +19,7 @@ var stopPeriodicCommandApp = false
 
 func (c *PeriodicCommandApp) Start(wg *sync.WaitGroup) {
 	defer wg.Done()
-	for stopPeriodicCommandApp != true {
+	for !stopPeriodicCommandApp {
 		fmt.Println("Running command: ", c.Command)
 		commandOutput, err := RunCommand(c.Command)
 		if err != nil {
@@ -30,9 +30,8 @@ func (c *PeriodicCommandApp) Start(wg *sync.WaitGroup) {
 	}
 }
 
-func (c *PeriodicCommandApp) Stop() error {
+func (c *PeriodicCommandApp) Stop() {
 	stopPeriodicCommandApp = true
-	return nil
 }
 
 func (c *PeriodicCommandApp) Validate() error {
