@@ -85,7 +85,7 @@ Task Fetching:
 - Periodically, the agent fetches tasks from a randomly selected server.
 - Each task is converted into an app by the App Factory and started as a goroutine.
 
-Data Exfiltration:
+Data Ex-filtration:
 
 - Old data rows (logs, collected data) are sent to the server in JSON format.
 - Communication is designed to avoid sending too much data at once and can respect system constraints like CPU usage.

