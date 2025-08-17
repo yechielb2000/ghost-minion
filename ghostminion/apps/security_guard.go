@@ -2,8 +2,6 @@ package apps
 
 import (
 	"errors"
-	"fmt"
-	"log"
 	"os"
 	"sync"
 )
@@ -28,7 +26,7 @@ func (ctx *SecurityGuardApp) SetIsSafe(isSafe bool) {
 
 func (ctx *SecurityGuardApp) Start(wg *sync.WaitGroup) {
 	defer wg.Done()
-	fmt.Println("Starting SecurityGuard app.")
+	lgr.Info("Starting SecurityGuard App")
 	ctx.checkFileExistence(ctx.FilesExistence)
 	/*
 		isSafe should be false on one of these terms
@@ -51,7 +49,7 @@ func (ctx *SecurityGuardApp) Validate() error {
 func (ctx *SecurityGuardApp) checkFileExistence(files []string) {
 	for _, file := range files {
 		if _, err := os.Stat(file); errors.Is(err, os.ErrNotExist) {
-			log.Printf("File %s does not exist.", file)
+			lgr.Warn("File does not exist: ", file)
 			ctx.SetIsSafe(false)
 			break
 		}

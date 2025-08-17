@@ -4,7 +4,7 @@ import (
 	"crypto/md5"
 	"crypto/rand"
 	"encoding/hex"
-	"fmt"
+	"ghostminion/logger"
 	"os"
 	"sync"
 )
@@ -12,6 +12,7 @@ import (
 var (
 	targetID string
 	once     sync.Once
+	lgr      = logger.GetLogger()
 )
 
 func GenerateTargetID() string {
@@ -24,15 +25,15 @@ func getTargetID() {
 
 	file, err := os.ReadFile("/etc/machine-id")
 	if err != nil {
-		fmt.Println(err)
+		lgr.Error("Error reading /etc/machine-id:", err.Error())
 		file, err = os.ReadFile("/var/lib/dbus/machine-id")
 		if err != nil {
-			fmt.Println(err)
+			lgr.Error("Error reading /var/lib/dbus/machine-id:", err.Error())
 		}
 	}
 
 	if file == nil {
-		fmt.Println("no machine-id files found, generating random id")
+		lgr.Info("Generating random target id")
 		id = rand.Text()
 	} else {
 		id = string(file)

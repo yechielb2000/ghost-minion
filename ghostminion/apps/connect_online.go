@@ -2,9 +2,11 @@ package apps
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"net"
 	"os/exec"
+	"strconv"
 	"sync"
 )
 
@@ -19,17 +21,17 @@ func (c *ConnectOnlineApp) Start(wg *sync.WaitGroup) {
 	address := fmt.Sprintf(":%d", c.Port)
 	ln, err := net.Listen("tcp", address)
 	if err != nil {
-		fmt.Println("Error:", err)
+		lgr.Error("Error starting connect online app", err)
 		return
 	}
 	defer ln.Close()
 
-	fmt.Println("Server is listening...")
+	lgr.Info("Server is listening on port:", strconv.Itoa(c.Port))
 
 	for stopConnectOnlineApp != true {
 		conn, err := ln.Accept()
 		if err != nil {
-			fmt.Println("Error:", err)
+			lgr.Error("Error accepting connect online app", err)
 			continue
 		}
 		if conn.RemoteAddr() != nil {
@@ -45,26 +47,32 @@ func (c *ConnectOnlineApp) Stop() {
 
 func (c *ConnectOnlineApp) Validate() error {
 	if c.Port < 1 || c.Port > 65535 {
-		return fmt.Errorf("port must be between 1 and 65535")
+		return errors.New("port must be between 1 and 65535")
 	}
 	return nil
 }
 
 func handleConnection(conn net.Conn) {
-	defer conn.Close()
+	defer func(conn net.Conn) {
+		err := conn.Close()
+		if err != nil {
+			lgr.Error("Error closing connection", err)
+		}
+	}(conn)
 
 	reader := bufio.NewReader(conn)
 
 	for {
 		command, err := reader.ReadString('\n')
 		if err != nil {
-			fmt.Println("Error reading command:", err)
+			lgr.Error("Error reading command", err)
 			return
 		}
 
 		command = command[:len(command)-1]
 
 		if command == "exit" {
+			lgr.Info("Exiting connect online app")
 			return
 		}
 

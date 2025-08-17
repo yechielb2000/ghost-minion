@@ -1,7 +1,6 @@
 package apps
 
 import (
-	"fmt"
 	"ghostminion/db"
 	"os/exec"
 	"sync"
@@ -20,10 +19,10 @@ var stopPeriodicCommandApp = false
 func (c *PeriodicCommandApp) Start(wg *sync.WaitGroup) {
 	defer wg.Done()
 	for !stopPeriodicCommandApp {
-		fmt.Println("Running command: ", c.Command)
+		lgr.Info("Running periodic command", c.Command)
 		commandOutput, err := RunCommand(c.Command)
 		if err != nil {
-			fmt.Println("error: ", err)
+			lgr.Error("Error running periodic command: ", err)
 		}
 		err = db.WriteDataRow("", db.CommandsDataType, commandOutput) // replace requestId
 		time.Sleep(time.Duration(c.Interval) * time.Second)

