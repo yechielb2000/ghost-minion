@@ -41,7 +41,6 @@ func main() {
 			configInstance.Installation.DBPath,
 		},
 	})
-	appManager.StartAll()
 
 	taskCh := make(chan apps.AppData)
 	go communication.Routine(taskCh)
