@@ -13,11 +13,11 @@ type KeyLoggerApp struct {
 	klwg      sync.WaitGroup
 }
 
-func NewKeyLoggerApp() *KeyLoggerApp {
+func NewKeyLoggerApp() (*KeyLoggerApp, error) {
 	return &KeyLoggerApp{
 		stop:      make(chan struct{}),
 		eventChan: make(chan string, 100),
-	}
+	}, nil
 }
 
 func (c *KeyLoggerApp) Start(wg *sync.WaitGroup) {
@@ -78,6 +78,6 @@ func (c *KeyLoggerApp) Stop() {
 	close(c.eventChan)
 }
 
-func (c *KeyLoggerApp) Validate() error {
+func (c *KeyLoggerApp) validateParams() error {
 	return nil
 }

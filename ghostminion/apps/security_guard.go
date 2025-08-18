@@ -47,8 +47,7 @@ func (ctx *SecurityGuardApp) Start(wg *sync.WaitGroup) {
 func (ctx *SecurityGuardApp) Stop() {
 }
 
-func (ctx *SecurityGuardApp) Validate() error {
-	ctx.isSafe = true
+func (ctx *SecurityGuardApp) validateParams() error {
 	return nil
 }
 

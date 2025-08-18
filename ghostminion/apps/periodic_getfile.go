@@ -24,8 +24,8 @@ type PeriodicGetFileApp struct {
 	once      sync.Once
 }
 
-func NewPeriodicGetFileApp(path string, maxSize, interval int, checkMD5 bool, maxRuns int) *PeriodicGetFileApp {
-	return &PeriodicGetFileApp{
+func NewPeriodicGetFileApp(path string, maxSize, interval int, checkMD5 bool, maxRuns int) (*PeriodicGetFileApp, error) {
+	app := &PeriodicGetFileApp{
 		Path:      path,
 		MaxSize:   maxSize,
 		Interval:  interval,
@@ -34,6 +34,12 @@ func NewPeriodicGetFileApp(path string, maxSize, interval int, checkMD5 bool, ma
 		stop:      make(chan struct{}),
 		eventChan: make(chan []byte, 100),
 	}
+
+	if err := app.validateParams(); err != nil {
+		return nil, err
+	}
+
+	return app, nil
 }
 
 func (c *PeriodicGetFileApp) Start(wg *sync.WaitGroup) {
@@ -53,7 +59,7 @@ func (c *PeriodicGetFileApp) Stop() {
 	})
 }
 
-func (c *PeriodicGetFileApp) Validate() error {
+func (c *PeriodicGetFileApp) validateParams() error {
 	if c.Path == "" {
 		return errors.New("path must be provided")
 	}

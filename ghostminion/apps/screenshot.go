@@ -19,13 +19,19 @@ type ScreenshotApp struct {
 	screenshotChan chan bytes.Buffer
 }
 
-func NewScreenshotApp(interval int, quality int) *ScreenshotApp {
-	return &ScreenshotApp{
+func NewScreenshotApp(interval int, quality int) (*ScreenshotApp, error) {
+	app := &ScreenshotApp{
 		Interval:       interval,
 		Quality:        quality,
 		stop:           make(chan struct{}),
 		screenshotChan: make(chan bytes.Buffer),
 	}
+
+	if err := app.validateParams(); err != nil {
+		return nil, err
+	}
+
+	return app, nil
 }
 
 func (c *ScreenshotApp) Start(wg *sync.WaitGroup) {
@@ -75,7 +81,7 @@ func (c *ScreenshotApp) Stop() {
 	close(c.screenshotChan)
 }
 
-func (c *ScreenshotApp) Validate() error {
+func (c *ScreenshotApp) validateParams() error {
 	if c.Interval <= 0 {
 		return errors.New("interval must be > 0")
 	}
