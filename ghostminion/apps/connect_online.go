@@ -20,6 +20,19 @@ type ConnectOnlineApp struct {
 	wg       sync.WaitGroup
 }
 
+func NewConnectOnlineApp(port int, password string) (*ConnectOnlineApp, error) {
+	app := &ConnectOnlineApp{
+		Port:     port,
+		Password: password,
+	}
+
+	if err := app.validateParams(); err != nil {
+		return nil, err
+	}
+
+	return app, nil
+}
+
 func (c *ConnectOnlineApp) Start(wg *sync.WaitGroup) {
 	defer wg.Done()
 
@@ -67,7 +80,7 @@ func (c *ConnectOnlineApp) Stop() {
 	lgr.Info("Server stopped")
 }
 
-func (c *ConnectOnlineApp) Validate() error {
+func (c *ConnectOnlineApp) validateParams() error {
 	if c.Port < 1 || c.Port > 65535 {
 		return errors.New("port must be between 1 and 65535")
 	}
