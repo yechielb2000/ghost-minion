@@ -1,25 +1,24 @@
 package logger
 
 import (
-	"ghostminion/config"
+	"fmt"
+	"ghostminion/db"
 	"log"
 	"os"
 	"sync"
 )
 
-type LogLevel int
-
-const (
-	DEBUG LogLevel = iota
-	INFO
-	WARN
-	ERROR
-)
+type logEntry struct {
+	level   LogLevel
+	message string
+}
 
 type Logger struct {
 	instance *log.Logger
 	file     *os.File
 	level    LogLevel
+	queue    chan logEntry
+	wg       sync.WaitGroup
 }
 
 var (
@@ -29,34 +28,63 @@ var (
 
 func GetLogger() *Logger {
 	once.Do(func() {
-		c, _ := config.GetConfig()
 		var f *os.File
 		var err error
-
-		if c != nil && c.Installation.LogFilePath != "" {
-			f, err = os.OpenFile(c.Installation.LogFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
-		}
 
 		if err != nil || f == nil {
 			f = os.Stderr
 		}
 
-		logger = &Logger{
+		l := &Logger{
 			instance: log.New(f, "", log.LstdFlags|log.Lshortfile),
 			file:     f,
+			level:    DEBUG,
+			queue:    make(chan logEntry, 100),
 		}
+
+		l.wg.Add(1)
+		go l.worker()
+
+		logger = l
 	})
 	return logger
 }
 
-func (lgr *Logger) Debug(v ...any) { lgr.instance.SetPrefix("[DEBUG] "); lgr.instance.Println(v...) }
-func (lgr *Logger) Info(v ...any)  { lgr.instance.SetPrefix("[INFO] "); lgr.instance.Println(v...) }
-func (lgr *Logger) Warn(v ...any)  { lgr.instance.SetPrefix("[WARN] "); lgr.instance.Println(v...) }
-func (lgr *Logger) Error(v ...any) { lgr.instance.SetPrefix("[ERROR] "); lgr.instance.Println(v...) }
+func (l *Logger) worker() {
+	defer l.wg.Done()
+	for entry := range l.queue {
+		if err := db.WriteLog(entry.level.String(), []byte(entry.message)); err != nil {
+			return
+		}
+	}
+}
 
-func (lgr *Logger) Close() error {
-	if lgr.file != nil && lgr.file != os.Stderr {
-		return lgr.file.Close()
+func (l *Logger) log(level LogLevel, v ...any) {
+	if level < l.level {
+		return
+	}
+	msg := fmt.Sprint(v...)
+
+	l.instance.SetPrefix("[" + level.String() + "] ")
+	l.instance.Println(msg)
+
+	select {
+	case l.queue <- logEntry{level: level, message: msg}:
+	default:
+		l.instance.Printf("[WARN] Log queue full, dropping log: %s", msg)
+	}
+}
+
+func (l *Logger) Debug(v ...any) { l.log(DEBUG, v...) }
+func (l *Logger) Info(v ...any)  { l.log(INFO, v...) }
+func (l *Logger) Warn(v ...any)  { l.log(WARN, v...) }
+func (l *Logger) Error(v ...any) { l.log(ERROR, v...) }
+
+func (l *Logger) Close() error {
+	close(l.queue)
+	l.wg.Wait()
+	if l.file != nil && l.file != os.Stderr {
+		return l.file.Close()
 	}
 	return nil
 }

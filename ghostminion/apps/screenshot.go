@@ -13,43 +13,74 @@ import (
 )
 
 type ScreenshotApp struct {
-	Interval       int8 `json:"interval"`
-	Quality        int  `json:"quality"`
+	Interval       int `json:"interval"`
+	Quality        int `json:"quality"`
 	stop           chan struct{}
 	screenshotChan chan bytes.Buffer
 }
 
+func NewScreenshotApp(interval int, quality int) *ScreenshotApp {
+	return &ScreenshotApp{
+		Interval:       interval,
+		Quality:        quality,
+		stop:           make(chan struct{}),
+		screenshotChan: make(chan bytes.Buffer),
+	}
+}
+
 func (c *ScreenshotApp) Start(wg *sync.WaitGroup) {
-	wg.Add(1)
 	defer wg.Done()
 
-	c.screenshotChan = make(chan bytes.Buffer)
+	go c.startProducer()
+	go c.startConsumer()
+}
 
-	go func() {
-		for {
+func (c *ScreenshotApp) startProducer() {
+	ticker := time.NewTicker(time.Duration(c.Interval) * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-c.stop:
+			return
+		case <-ticker.C:
+			screenshotBuf, err := c.getScreenshot()
+			if err != nil {
+				lgr.Warn("error capturing screenshot:", err.Error())
+				continue
+			}
+			captureTime := time.Now().Unix()
+			lgr.Info("Screenshot captured at", captureTime)
+
 			select {
-			case <-c.stop:
-				return
+			case c.screenshotChan <- screenshotBuf:
 			default:
-				screenshotBuf, err := c.getScreenshot()
-				if err != nil {
-					lgr.Warn("error in screenshot app", err.Error())
-				}
-				captureTime := time.Now().Unix()
-				lgr.Info("Screenshot captured at", captureTime)
-				c.screenshotChan <- screenshotBuf
-				time.Sleep(time.Duration(c.Interval) * time.Second)
+				lgr.Warn("screenshot channel full, dropping frame")
 			}
 		}
+	}
+}
 
-	}()
+func (c *ScreenshotApp) startConsumer() {
+	for ss := range c.screenshotChan {
+		if err := db.WriteData("", dbDataTypes.Screenshots, ss.Bytes()); err != nil {
+			lgr.Error("Error writing screenshot to DB:", err)
+		}
+	}
 }
 
 func (c *ScreenshotApp) Stop() {
 	close(c.stop)
+	close(c.screenshotChan)
 }
 
 func (c *ScreenshotApp) Validate() error {
+	if c.Interval <= 0 {
+		return errors.New("interval must be > 0")
+	}
+	if c.Quality < 1 || c.Quality > 100 {
+		return errors.New("quality must be between 1 and 100")
+	}
 	return nil
 }
 
@@ -62,7 +93,7 @@ func (c *ScreenshotApp) getScreenshot() (bytes.Buffer, error) {
 		return buf, errors.New("no active displays found")
 	}
 
-	for i := range activeDisplaysNum {
+	for i := 0; i <= activeDisplaysNum; i++ {
 		bounds := screenshot.GetDisplayBounds(i).Union(image.Rect(0, 0, 0, 0))
 		if img, err := screenshot.CaptureRect(bounds); img != nil {
 			if err = jpeg.Encode(&buf, img, &jpeg.Options{Quality: c.Quality}); err == nil {
@@ -71,15 +102,4 @@ func (c *ScreenshotApp) getScreenshot() (bytes.Buffer, error) {
 		}
 	}
 	return bytes.Buffer{}, err
-}
-
-func (c *ScreenshotApp) storeScreenshot() {
-	go func() {
-		for ss := range c.screenshotChan {
-			err := db.WriteData("", dbDataTypes.Screenshots, ss.Bytes())
-			if err != nil {
-				lgr.Error("Error writing file data: ", err)
-			}
-		}
-	}()
 }
