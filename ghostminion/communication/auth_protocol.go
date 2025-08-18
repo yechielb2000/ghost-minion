@@ -10,8 +10,7 @@ import (
 )
 
 func CanCommunicate(serverConfig config.ServerConfig) bool {
-	configInstance, _ := config.GetConfig()
-	agentId := configInstance.AgentID
+	agentId := config.GetInstance().AgentID
 	challenge, err := getChallenge(agentId, serverConfig)
 
 	if err != nil {

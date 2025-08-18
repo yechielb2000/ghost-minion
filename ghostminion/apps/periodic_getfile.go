@@ -39,7 +39,7 @@ func (c *PeriodicGetFileApp) Start(wg *sync.WaitGroup) {
 			if currentFileMD5 != fileMD5 {
 				lgr.Warn("File MD5 mismatch: Expected %v, got %v", currentFileMD5, fileMD5)
 				currentFileMD5 = fileMD5
-				err = db.WriteData("", dbDataTypes.Files, fileContent) // replace requestId
+				err = db.GetInstance().WriteData("", dbDataTypes.Files, fileContent) // replace requestId
 				if err != nil {
 					lgr.Error("Error writing file data: ", err)
 				}

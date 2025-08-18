@@ -53,6 +53,7 @@ func GetLogger() *Logger {
 func (l *Logger) worker() {
 	defer l.wg.Done()
 	for entry := range l.queue {
+		db := db.GetInstance()
 		if err := db.WriteLog(entry.level.String(), []byte(entry.message)); err != nil {
 			return
 		}

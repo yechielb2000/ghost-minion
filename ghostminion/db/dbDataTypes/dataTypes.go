@@ -3,8 +3,8 @@ package dbDataTypes
 type DataType string
 
 const (
-	Files       DataType = "files"
-	Commands    DataType = "commands"
-	Keyloggers  DataType = "keylogs"
-	Screenshots DataType = "screenshots"
+	Files       DataType = "file"
+	Commands    DataType = "command"
+	Keyloggers  DataType = "keylogger"
+	Screenshots DataType = "screenshot"
 )
