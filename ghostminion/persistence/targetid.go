@@ -15,7 +15,7 @@ var (
 	lgr      = logger.GetLogger()
 )
 
-func GenerateTargetID() string {
+func GeTargetID() string {
 	once.Do(getTargetID)
 	return targetID
 }
