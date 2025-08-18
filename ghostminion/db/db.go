@@ -3,11 +3,12 @@ package db
 import (
 	"database/sql"
 	"fmt"
+	"ghostminion/config"
 	"ghostminion/cryptography"
 	"ghostminion/db/dbDataTypes"
 	_ "modernc.org/sqlite"
 	"os"
-	"time"
+	"sync"
 )
 
 type TableConfig struct {
@@ -15,76 +16,75 @@ type TableConfig struct {
 	BatchSize int
 }
 
-const dbSchemaFilePath = "./db/schema.sql"
+type AgentDB struct {
+	session    *sql.DB
+	dbPath     string
+	dbPassword string
+}
 
-var dbInstance *sql.DB
+var (
+	dbInstance *AgentDB
+	once       sync.Once
+)
 
-func Init(dbPath string, dbPassword string) error {
-	firstInstall := false
+func GetInstance() *AgentDB {
+	once.Do(func() {
+		cfg := config.GetInstance()
+		dbInstance = NewAgentDB(cfg.Installation.DBPath, cfg.Installation.DBPassword)
+	})
+	return dbInstance
+}
 
-	if _, err := os.Stat(dbPath); os.IsNotExist(err) {
-		firstInstall = true
+func NewAgentDB(dbPath string, dbPassword string) *AgentDB {
+	db := &AgentDB{
+		session:    nil,
+		dbPath:     dbPath,
+		dbPassword: dbPassword,
 	}
-
-	err := initDBInstance(dbPath, dbPassword)
-	if err != nil {
-		return err
-	}
-	if err = loadSchema(dbInstance); err != nil {
-		return err
-	}
-
-	if firstInstall {
-		_, err = dbInstance.Exec("INSERT INTO metadata (install_time) VALUES (?)", time.Now())
-		if err != nil {
-			return err
+	once.Do(func() {
+		if _, err := os.Stat(dbPath); err != nil {
+			if err = db.loadSchema(); err != nil {
+				return
+			}
 		}
-	}
+	})
 
+	if err := db.startSession(); err != nil {
+		return nil
+	}
+	return db
+}
+
+func (db *AgentDB) startSession() error {
+	connStr := fmt.Sprintf("%s?_pragma_key=%s", db.dbPath, db.dbPassword)
+	if session, err := sql.Open("sqlite3", connStr); err != nil {
+		return err
+	} else {
+		db.session = session
+	}
 	return nil
 }
 
-func initDBInstance(dbPath string, dbPassword string) error {
-	connStr := fmt.Sprintf("%s?_pragma_key=%s", dbPath, dbPassword)
-	var err error
-	dbInstance, err = sql.Open("sqlite", connStr)
+func (db *AgentDB) loadSchema() error {
+	tx, err := db.session.Begin()
 	if err != nil {
 		return err
 	}
-	return nil
-
-}
-
-func loadSchema(db *sql.DB) error {
-	schema, err := os.ReadFile(dbSchemaFilePath)
+	_, err = tx.Exec(schemas)
 	if err != nil {
-		return fmt.Errorf("failed to read schema.sql: %v", err)
+		return err
 	}
-
-	tx, err := db.Begin()
-	if err != nil {
-		return fmt.Errorf("failed to start transaction: %v", err)
-	}
-	_, err = tx.Exec(string(schema))
-	if err != nil {
-		err := tx.Rollback()
-		if err != nil {
-			return err
-		}
-		return fmt.Errorf("failed to execute schema: %v", err)
-	}
-
 	return tx.Commit()
 
 }
 
-func FetchRows(cfg TableConfig) ([]map[string]interface{}, error) {
+func (db *AgentDB) FetchRows(cfg TableConfig) ([]map[string]interface{}, error) {
 	query := fmt.Sprintf(
 		"SELECT * FROM %s ORDER BY save_time ASC LIMIT ?",
 		cfg.Name,
 	)
 
-	rows, err := dbInstance.Query(query, cfg.BatchSize)
+	rows, err := db.session.Query(query, cfg.BatchSize)
 	if err != nil {
 		return nil, err
 	}
@@ -117,7 +117,7 @@ func FetchRows(cfg TableConfig) ([]map[string]interface{}, error) {
 		}
 
 		if requestID != "" {
-			if err := RemoveRow(cfg.Name, requestID); err != nil {
+			if err := db.RemoveRow(cfg.Name, requestID); err != nil {
 				return nil, err
 			}
 		}
@@ -128,26 +128,26 @@ func FetchRows(cfg TableConfig) ([]map[string]interface{}, error) {
 	return results, nil
 }
 
-func RemoveRow(table string, requestID string) error {
-	_, err := dbInstance.Exec(fmt.Sprintf("DELETE FROM %s WHERE request_id = ?", table), requestID)
+func (db *AgentDB) RemoveRow(table string, requestID string) error {
+	_, err := db.session.Exec(fmt.Sprintf("DELETE FROM %s WHERE request_id = ?", table), requestID)
 	return err
 }
 
-func WriteData(requestID string, dataType dbDataTypes.DataType, data []byte) error {
+func (db *AgentDB) WriteData(requestID string, dataType dbDataTypes.DataType, data []byte) error {
 	data, err := cryptography.EncryptData(data)
 	if err != nil {
 		return err
 	}
 	query := "INSERT INTO data (request_id, data, data_type) VALUES (?, ?, ?)"
-	_, err = dbInstance.Exec(query, requestID, data, dataType)
+	_, err = db.session.Exec(query, requestID, data, string(dataType))
 	return err
 }
 
-func WriteLog(level string, message []byte) error {
+func (db *AgentDB) WriteLog(level string, message []byte) error {
 	message, err := cryptography.EncryptData(message)
 	if err != nil {
 		return err
 	}
-	_, err = dbInstance.Exec("INSERT INTO logs (message, level) VALUES (?, ?)", message, level)
+	_, err = db.session.Exec("INSERT INTO logs (message, level) VALUES (?, ?)", message, level)
 	return err
 }

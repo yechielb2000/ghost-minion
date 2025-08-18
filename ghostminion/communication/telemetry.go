@@ -14,13 +14,8 @@ type Telemetry struct {
 }
 
 func NewTelemetry(isAlive bool) (Telemetry, error) {
-	c, err := config.GetConfig()
-	if err != nil {
-		return Telemetry{}, err
-	}
-
 	return Telemetry{
-		AgentID:          c.AgentID,
+		AgentID:          config.GetInstance().AgentID,
 		AgentType:        "GhostMinion",
 		IsAlive:          isAlive,
 		CurrentTimestamp: time.Now().Unix(),

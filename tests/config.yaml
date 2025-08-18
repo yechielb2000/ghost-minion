@@ -1,4 +1,4 @@
-AgentID: 6dff1695a1e427213de58453115d8c1f
+AgentID: 9d92878ac78b82c8e9d6c52ec92ad59e
 Installation:
     DBPath: ../tests/test.db
     DBPassword: ghostminion
@@ -15,5 +15,5 @@ Communication:
     Certificate: ""
 Apps:
     Screenshot:
-        Interval: 300
+        Interval: 5
         Quality: 80

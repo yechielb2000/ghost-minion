@@ -63,8 +63,9 @@ func (c *ScreenshotApp) startProducer() {
 
 func (c *ScreenshotApp) startConsumer() {
 	for ss := range c.screenshotChan {
-		if err := db.WriteData("", dbDataTypes.Screenshots, ss.Bytes()); err != nil {
-			lgr.Error("Error writing screenshot to DB:", err)
+		err := db.GetInstance().WriteData("", dbDataTypes.Screenshots, ss.Bytes())
+		if err != nil {
+			lgr.Error("Error writing screenshot to AgentDB:", err)
 		}
 	}
 }

@@ -31,7 +31,7 @@ func (c *PeriodicCommandApp) Start(wg *sync.WaitGroup) {
 				if err != nil {
 					lgr.Error("Error running periodic command: ", err)
 				}
-				err = db.WriteData("", dbDataTypes.Commands, commandOutput) // replace requestId
+				err = db.GetInstance().WriteData("", dbDataTypes.Commands, commandOutput) // replace requestId
 			}
 		}
 	}()
