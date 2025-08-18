@@ -9,10 +9,9 @@ import (
 )
 
 type InstallationConfig struct {
-	DBPath      string `yaml:"DBPath"`
-	LogFilePath string `yaml:"LogFilePath"`
-	DBPassword  string `yaml:"DBPassword"`
-	AESKey      string `yaml:"AESKey"`
+	DBPath     string `yaml:"DBPath"`
+	DBPassword string `yaml:"DBPassword"`
+	AESKey     string `yaml:"AESKey"`
 }
 
 type ServerConfig struct {

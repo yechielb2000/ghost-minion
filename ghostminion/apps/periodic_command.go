@@ -10,28 +10,35 @@ import (
 )
 
 type PeriodicCommandApp struct {
-	Command  string `json:"Command"`
-	Timeout  uint   `json:"Timeout"`
-	Interval uint   `json:"Interval"`
+	Command     string `json:"Command"`
+	Timeout     uint   `json:"Timeout"`
+	Interval    uint   `json:"Interval"`
+	stop        chan struct{}
+	commandChan chan string
 }
-
-var stopPeriodicCommandApp = false
 
 func (c *PeriodicCommandApp) Start(wg *sync.WaitGroup) {
 	defer wg.Done()
-	for !stopPeriodicCommandApp {
-		lgr.Info("Running periodic command", c.Command)
-		commandOutput, err := RunCommand(c.Command)
-		if err != nil {
-			lgr.Error("Error running periodic command: ", err)
+
+	go func() {
+		for {
+			select {
+			case <-c.stop:
+				return
+			case <-time.After(time.Duration(c.Interval) * time.Second):
+				lgr.Info("Running periodic command", c.Command)
+				commandOutput, err := RunCommand(c.Command)
+				if err != nil {
+					lgr.Error("Error running periodic command: ", err)
+				}
+				err = db.WriteData("", dbDataTypes.Commands, commandOutput) // replace requestId
+			}
 		}
-		err = db.WriteData("", dbDataTypes.Commands, commandOutput) // replace requestId
-		time.Sleep(time.Duration(c.Interval) * time.Second)
-	}
+	}()
 }
 
 func (c *PeriodicCommandApp) Stop() {
-	stopPeriodicCommandApp = true
+	close(c.stop)
 }
 
 func (c *PeriodicCommandApp) Validate() error {

