@@ -102,7 +102,7 @@ func (c *PeriodicGetFileApp) startProducer() {
 				hash := md5.Sum(data)
 				fileMD5 := hex.EncodeToString(hash[:])
 				if fileMD5 == currentMD5 {
-					continue // unchanged
+					continue
 				}
 				currentMD5 = fileMD5
 			}
