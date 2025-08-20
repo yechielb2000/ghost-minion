@@ -4,7 +4,6 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"encoding/hex"
-	"errors"
 	"ghostminion/config"
 )
 
@@ -25,10 +24,6 @@ func DecryptData(cipherText []byte) ([]byte, error) {
 	}
 
 	nonceSize := aesGCM.NonceSize()
-	if len(cipherText) < nonceSize {
-		return nil, errors.New("cipherText too short")
-	}
-
 	nonce, cipherText := cipherText[:nonceSize], cipherText[nonceSize:]
 	plainText, err := aesGCM.Open(nil, nonce, cipherText, nil)
 	if err != nil {

