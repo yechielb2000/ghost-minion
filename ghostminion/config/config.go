@@ -70,3 +70,7 @@ func GetConfigFilePath() string {
 
 	return filepath.Join(currentDir, "config.yaml")
 }
+
+func DeleteConfig() error {
+	return os.Remove(GetConfigFilePath())
+}

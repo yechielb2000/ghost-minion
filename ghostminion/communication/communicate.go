@@ -31,7 +31,7 @@ func Routine(taskCh chan<- apps.AppData) {
 				}
 
 				leaker := NewLeaker(
-					[]db.TableConfig{
+					[]db.FetchTableConfig{
 						{Name: "logs", BatchSize: 50},
 						{Name: "data", BatchSize: 1},
 					},

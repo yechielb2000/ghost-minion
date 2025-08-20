@@ -7,12 +7,12 @@ import (
 )
 
 type Leaker struct {
-	tables       []db.TableConfig
+	tables       []db.FetchTableConfig
 	serverConfig config.ServerConfig
 	isSafeToLeak bool
 }
 
-func NewLeaker(tables []db.TableConfig, serverConfig config.ServerConfig) *Leaker {
+func NewLeaker(tables []db.FetchTableConfig, serverConfig config.ServerConfig) *Leaker {
 	return &Leaker{tables: tables, serverConfig: serverConfig}
 }
 
@@ -42,7 +42,6 @@ func (l *Leaker) LeakData() error {
 }
 
 func (l *Leaker) sendData(data any) error {
-	// TODO: DecryptData before
 	payload, err := json.Marshal(data)
 	if err != nil {
 		return err
