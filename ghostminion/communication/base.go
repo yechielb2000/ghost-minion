@@ -22,7 +22,7 @@ const (
 	OPTIONS HTTPMethod = "OPTIONS"
 )
 
-var lgr = logger.GetLogger()
+var lgr = logger.GetInstance()
 
 func CreateRoute(serverConfig config.ServerConfig, route string) string {
 	return fmt.Sprintf("https://%s:%d/%s", serverConfig.Address, serverConfig.Port, route)

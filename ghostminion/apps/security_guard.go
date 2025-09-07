@@ -9,6 +9,7 @@ import (
 )
 
 type SecurityGuardApp struct {
+	*BaseApp
 	isSafe         bool
 	mu             sync.Mutex
 	FilesExistence []string `json:"FilesExistence"`

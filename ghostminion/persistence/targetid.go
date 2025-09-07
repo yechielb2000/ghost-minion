@@ -12,7 +12,7 @@ import (
 var (
 	targetID string
 	once     sync.Once
-	lgr      = logger.GetLogger()
+	lgr      = logger.GetInstance()
 )
 
 func GeTargetID() string {

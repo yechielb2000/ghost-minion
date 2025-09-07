@@ -1,6 +1,7 @@
 package apps
 
 import (
+	"context"
 	"errors"
 	"ghostminion/db"
 	"ghostminion/db/dbDataTypes"
@@ -10,25 +11,32 @@ import (
 	"time"
 )
 
-type PeriodicCommandApp struct {
+type PeriodicCommandParams struct {
 	Command  string `json:"Command"`
 	Timeout  int    `json:"Timeout"`
 	Interval int    `json:"Interval"`
 	MaxRuns  int    `json:"MaxRuns"` // -1 = infinite
+}
 
-	stop        chan struct{}
+type PeriodicCommandApp struct {
+	baseApp     *BaseApp
+	params      *PeriodicCommandParams
 	commandChan chan []byte
 	wg          sync.WaitGroup
 	once        sync.Once
 }
 
-func NewPeriodicCommandApp(command string, interval int, timeout int, maxRuns int) (*PeriodicCommandApp, error) {
+func NewPeriodicCommand(appData AppData) (*PeriodicCommandApp, error) {
+	params := PeriodicCommandParams{}
+	if err := appData.UnmarshalParams(&params); err != nil {
+		return nil, err
+	}
 	app := &PeriodicCommandApp{
-		Command:     command,
-		Interval:    interval,
-		Timeout:     timeout,
-		MaxRuns:     maxRuns,
-		stop:        make(chan struct{}),
+		baseApp: &BaseApp{
+			stop:    make(chan struct{}, 1),
+			AppData: &appData,
+		},
+		params:      &params,
 		commandChan: make(chan []byte, 100),
 	}
 
@@ -39,63 +47,67 @@ func NewPeriodicCommandApp(command string, interval int, timeout int, maxRuns in
 	return app, nil
 }
 
-func (c *PeriodicCommandApp) Start(wg *sync.WaitGroup) {
-	defer wg.Done()
-
-	c.wg.Add(2)
-	go c.startProducer()
-	go c.startConsumer()
-	c.wg.Wait()
+func (c *PeriodicCommandApp) Name() string {
+	return c.baseApp.Name
 }
 
-func (c *PeriodicCommandApp) Stop() {
-	c.once.Do(func() {
-		close(c.stop)
-		c.wg.Wait()
-		close(c.commandChan)
-	})
+func (c *PeriodicCommandApp) Start(ctx context.Context) error {
+	// run store
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		c.store(ctx)
+	}()
+
+	// run produce in this goroutine (blocking)
+	c.produce(ctx)
+
+	<-done
+	return nil
+}
+func (c *PeriodicCommandApp) Stop() error {
+	close(c.commandChan)
+	return nil
 }
 
 func (c *PeriodicCommandApp) validateParams() error {
-	if c.Command == "" {
+	if c.params.Command == "" {
 		return errors.New("command must be provided")
 	}
-	if c.Interval == 0 {
+	if c.params.Interval <= 0 {
 		return errors.New("interval must be greater than 0")
 	}
-	if c.MaxRuns < -1 {
+	if c.params.MaxRuns < -1 {
 		return errors.New("MaxRuns must be -1 or greater")
 	}
 	return nil
 }
 
-func (c *PeriodicCommandApp) startProducer() {
-	defer c.wg.Done()
+func (c *PeriodicCommandApp) produce(ctx context.Context) {
 	runCount := 0
-
-	ticker := time.NewTicker(time.Duration(c.Interval) * time.Second)
+	ticker := time.NewTicker(time.Duration(c.params.Interval) * time.Second)
 	defer ticker.Stop()
 
 	for {
 		select {
-		case <-c.stop:
+		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			if c.MaxRuns != -1 && runCount >= c.MaxRuns {
-				lgr.Info("Reached MaxRuns, stopping command producer")
+			if c.params.MaxRuns != -1 && runCount >= c.params.MaxRuns {
+				lgr.Info("Reached MaxRuns, stopping command produce")
 				return
 			}
 
-			lgr.Info("Running periodic command:", c.Command)
-			output, err := RunCommand(c.Command)
+			lgr.Info("Running periodic command:", c.params.Command)
+			output, err := RunCommand(c.params.Command)
 			if err != nil {
-				lgr.Error("Error running command: ", err)
+				lgr.Error("Error running command: " + err.Error())
 			}
 
 			select {
 			case c.commandChan <- output:
-			default:
-				lgr.Warn("Command channel full, dropping output")
+			case <-ctx.Done():
+				return
 			}
 
 			runCount++
@@ -103,18 +115,17 @@ func (c *PeriodicCommandApp) startProducer() {
 	}
 }
 
-func (c *PeriodicCommandApp) startConsumer() {
-	defer c.wg.Done()
+func (c *PeriodicCommandApp) store(ctx context.Context) {
 	for {
 		select {
-		case <-c.stop:
+		case <-ctx.Done():
 			return
 		case output, ok := <-c.commandChan:
 			if !ok {
 				return
 			}
 			if err := db.GetInstance().WriteData("", dbDataTypes.Commands, output); err != nil {
-				lgr.Error("Error writing command output: ", err)
+				lgr.Error("Error writing command output: " + err.Error())
 			}
 		}
 	}

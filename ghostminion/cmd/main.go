@@ -13,7 +13,7 @@ import (
 var (
 	configInstance = config.GetInstance()
 	_              = db.GetInstance()
-	lgr            = logger.GetLogger()
+	lgr            = logger.GetInstance()
 )
 
 func main() {

