@@ -1,5 +1,7 @@
 package config
 
+import "encoding/json"
+
 type InstallationConfig struct {
 	DBPath     string `yaml:"DBPath"`
 	DBPassword string `yaml:"DBPassword"`
@@ -18,8 +20,14 @@ type CommunicationConfig struct {
 	Certificate string         `yaml:"Certificate"`
 }
 
-type AppsConfig struct {
-	Keylogger     map[string]any `yaml:"Keylogger,omitempty"`
-	Screenshot    map[string]any `yaml:"Screenshot,omitempty"`
-	SecurityGuard map[string]any `yaml:"SecurityGuard,omitempty"`
+type HiderConfig struct {
+	NewProcessName string `yaml:"NewProcessName"`
+}
+
+// AppDataConfig is the same as AppData
+type AppDataConfig struct {
+	Id     string          `json:"id"`
+	Type   string          `json:"type"`
+	Name   string          `json:"name"`
+	Params json.RawMessage `json:"params"`
 }

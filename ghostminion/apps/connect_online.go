@@ -2,28 +2,38 @@ package apps
 
 import (
 	"bufio"
+	"context"
 	"errors"
 	"fmt"
 	"net"
 	"os/exec"
-	"strconv"
 	"strings"
 	"sync"
 )
 
-type ConnectOnlineApp struct {
+type ConnectOnlineParams struct {
 	Port     int    `json:"Port,omitempty"`
 	Password string `json:"Password,omitempty"`
+}
 
+type ConnectOnlineApp struct {
+	baseApp  *BaseApp
+	params   *ConnectOnlineParams
 	listener net.Listener
-	stop     chan struct{}
 	wg       sync.WaitGroup
 }
 
-func NewConnectOnlineApp(port int, password string) (*ConnectOnlineApp, error) {
+func NewConnectOnlineApp(appData AppData) (*ConnectOnlineApp, error) {
+	params := &ConnectOnlineParams{}
+	if err := appData.UnmarshalParams(params); err != nil {
+		return nil, err
+	}
 	app := &ConnectOnlineApp{
-		Port:     port,
-		Password: password,
+		baseApp: &BaseApp{
+			stop:    make(chan struct{}, 1),
+			AppData: &appData,
+		},
+		params: params,
 	}
 
 	if err := app.validateParams(); err != nil {
@@ -33,64 +43,79 @@ func NewConnectOnlineApp(port int, password string) (*ConnectOnlineApp, error) {
 	return app, nil
 }
 
-func (c *ConnectOnlineApp) Start(wg *sync.WaitGroup) {
-	defer wg.Done()
+func (c *ConnectOnlineApp) Name() string {
+	return c.baseApp.Name
+}
 
-	address := fmt.Sprintf(":%d", c.Port)
+// Start runs the TCP server until ctx is canceled
+func (c *ConnectOnlineApp) Start(ctx context.Context) error {
+	address := fmt.Sprintf(":%d", c.params.Port)
 	ln, err := net.Listen("tcp", address)
 	if err != nil {
-		lgr.Error("Error starting server:", err)
-		return
+		lgr.Error("Error starting server: " + err.Error())
+		return err
 	}
-	c.listener = ln
-	c.stop = make(chan struct{})
+	defer ln.Close()
 
-	lgr.Info("Server is listening on port:", strconv.Itoa(c.Port))
+	lgr.Info("Server is listening on port:", c.params.Port)
 
-	for {
-		select {
-		case <-c.stop:
-			return
-		default:
+	// Accept loop
+	connChan := make(chan net.Conn)
+	errChan := make(chan error)
+
+	// Goroutine to accept connections
+	go func() {
+		for {
 			conn, err := ln.Accept()
 			if err != nil {
 				select {
-				case <-c.stop:
+				case <-ctx.Done():
 					return
 				default:
-					lgr.Error("Error accepting connection:", err)
+					errChan <- err
 					continue
 				}
 			}
-			c.wg.Add(1)
-			go func() {
-				defer c.wg.Done()
-				c.handleConnection(conn)
-			}()
+			select {
+			case connChan <- conn:
+			case <-ctx.Done():
+				conn.Close()
+				return
+			}
+		}
+	}()
+
+	for {
+		select {
+		case <-ctx.Done():
+			lgr.Info("Server shutting down")
+			return nil
+		case err := <-errChan:
+			lgr.Error("Error accepting connection: " + err.Error())
+		case conn := <-connChan:
+			go c.handleConnection(ctx, conn)
 		}
 	}
 }
 
-func (c *ConnectOnlineApp) Stop() {
-	close(c.stop)
-	if c.listener != nil {
-		c.listener.Close()
-	}
-	c.wg.Wait()
-	lgr.Info("Server stopped")
+// Stop is a no-op because context controls shutdown
+func (c *ConnectOnlineApp) Stop() error {
+	return nil
 }
 
+// validateParams ensures port and password are valid
 func (c *ConnectOnlineApp) validateParams() error {
-	if c.Port < 1 || c.Port > 65535 {
+	if c.params.Port < 1 || c.params.Port > 65535 {
 		return errors.New("port must be between 1 and 65535")
 	}
-	if c.Password == "" {
+	if c.params.Password == "" {
 		return errors.New("password is required")
 	}
 	return nil
 }
 
-func (c *ConnectOnlineApp) handleConnection(conn net.Conn) {
+// handleConnection handles a single TCP client until exit or ctx cancellation
+func (c *ConnectOnlineApp) handleConnection(ctx context.Context, conn net.Conn) {
 	defer conn.Close()
 	lgr.Info("New connection from:", conn.RemoteAddr().String())
 
@@ -99,7 +124,7 @@ func (c *ConnectOnlineApp) handleConnection(conn net.Conn) {
 	conn.Write([]byte("Enter password: "))
 	pass, _ := reader.ReadString('\n')
 	pass = strings.TrimSpace(pass)
-	if pass != c.Password {
+	if pass != c.params.Password {
 		conn.Write([]byte("Invalid password. Closing connection.\n"))
 		lgr.Warn("Authentication failed from", conn.RemoteAddr().String())
 		return
@@ -110,11 +135,17 @@ func (c *ConnectOnlineApp) handleConnection(conn net.Conn) {
 		conn.Write([]byte("> "))
 		command, err := reader.ReadString('\n')
 		if err != nil {
-			lgr.Error("Error reading command:", err)
-			break
+			lgr.Error("Error reading command: " + err.Error())
+			return
 		}
 
 		command = strings.TrimSpace(command)
+
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
 
 		switch command {
 		case "":
