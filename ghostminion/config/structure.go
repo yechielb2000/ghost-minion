@@ -18,8 +18,13 @@ type CommunicationConfig struct {
 	Certificate string         `yaml:"Certificate"`
 }
 
+type HiderConfig struct {
+	NewProcessName string `yaml:"NewProcessName"`
+}
+
 type AppsConfig struct {
 	Keylogger     map[string]any `yaml:"Keylogger,omitempty"`
 	Screenshot    map[string]any `yaml:"Screenshot,omitempty"`
 	SecurityGuard map[string]any `yaml:"SecurityGuard,omitempty"`
+	Hider         HiderConfig    `yaml:"Hider,omitempty"`
 }
