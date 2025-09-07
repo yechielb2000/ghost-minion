@@ -12,7 +12,7 @@ type Config struct {
 	AgentID        string              `yaml:"AgentID"`
 	Installation   InstallationConfig  `yaml:"Installation"`
 	Communication  CommunicationConfig `yaml:"Communication"`
-	Apps           AppsConfig          `yaml:"Apps"`
+	Apps           []AppDataConfig     `yaml:"Apps"`
 	mu             sync.Mutex
 	configFilePath string
 }
