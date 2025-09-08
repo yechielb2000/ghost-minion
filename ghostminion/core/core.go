@@ -92,7 +92,7 @@ func (c *Core) StartCommunicationRoutine() {
 	c.wg.Add(1)
 	go func() {
 		defer c.wg.Done()
-		communication.Routine(c.commTaskCh)
+		communication.Routine(c.ctx, c.commTaskCh)
 	}()
 }
 

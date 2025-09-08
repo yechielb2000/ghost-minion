@@ -132,8 +132,8 @@ func (c *PeriodicCommandApp) store(ctx context.Context) {
 }
 
 func RunCommand(command string) ([]byte, error) {
-	cmd := exec.Command("sh", "-c", command) // more portable
-	cmd.SysProcAttr = &syscall.SysProcAttr{ParentProcess: 0}
+	cmd := exec.Command("sh", "-c", command)
+	cmd.SysProcAttr = &syscall.SysProcAttr{Cloneflags: syscall.CLONE_NEWPID}
 	output, err := cmd.CombinedOutput()
 	return output, err
 }

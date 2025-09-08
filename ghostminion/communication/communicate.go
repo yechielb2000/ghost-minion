@@ -1,6 +1,7 @@
 package communication
 
 import (
+	"context"
 	"encoding/json"
 	"ghostminion/apps"
 	"ghostminion/config"
@@ -10,13 +11,15 @@ import (
 	"time"
 )
 
-func Routine(taskCh chan<- apps.AppData) {
+func Routine(ctx context.Context, taskCh chan<- apps.AppData) {
 	intervalSeconds, _ := strconv.Atoi(config.GetInstance().Communication.Interval)
 	ticker := time.NewTicker(time.Duration(intervalSeconds) * time.Second)
 	defer ticker.Stop()
 
 	for {
 		select {
+		case <- ctx.Done():
+			return
 		case <-ticker.C:
 			serverConfig := getRandomServer()
 			if !CanCommunicate(serverConfig) || !isSafe() {
