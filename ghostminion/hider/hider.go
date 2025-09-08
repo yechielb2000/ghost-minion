@@ -20,6 +20,11 @@ var (
 	cfg = config.GetInstance()
 )
 
+type event struct {
+	Pid  uint32
+	Comm [16]byte
+}
+
 func Hide() error {
 	lgr.Debug("Hiding process begins")
 	cname := C.CString("")

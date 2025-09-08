@@ -3,6 +3,7 @@ package logger
 import (
 	"fmt"
 	"ghostminion/db"
+	"io"
 	"log"
 	"os"
 	"sync"
@@ -28,15 +29,12 @@ var (
 
 func GetInstance() *Logger {
 	once.Do(func() {
-		var f *os.File
-		var err error
+		var f *os.File = os.Stderr
 
-		if err != nil || f == nil {
-			f = os.Stderr
-		}
+		writer := io.MultiWriter(os.Stdout, f)
 
 		l := &Logger{
-			instance: log.New(f, "", log.LstdFlags|log.Lshortfile),
+			instance: log.New(writer, "", log.LstdFlags|log.Lshortfile),
 			file:     f,
 			level:    DEBUG,
 			queue:    make(chan logEntry, 100),
