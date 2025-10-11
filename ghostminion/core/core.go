@@ -31,7 +31,6 @@ type Core struct {
 	commTaskCh   chan apps.AppData
 }
 
-// NewCore creates a Core that owns the cancellation context and WaitGroup.
 func NewCore() *Core {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &Core{
@@ -51,8 +50,6 @@ func (c *Core) Context() context.Context {
 	return c.ctx
 }
 
-// Start starts all registered am and blocks until a shutdown reason or external cancel.
-// After shut down is triggered, it waits for all am to finish.
 func (c *Core) Start() {
 	// Start all apps under core context
 	c.am.StartAll(c.ctx, &c.wg)
@@ -96,7 +93,6 @@ func (c *Core) StartCommunicationRoutine() {
 	}()
 }
 
-// Shutdown triggers a global shutdown. It's important.
 func (c *Core) Shutdown(reason string) {
 	// log early (useful for C2 ack before we cancel)
 	lgr.Warn(reason)
@@ -109,8 +105,6 @@ func (c *Core) Shutdown(reason string) {
 	close(c.commTaskCh)
 }
 
-// TriggerShutdown sends a shutdown message into the core's channel (non-blocking).
-// Useful for modules that only know about Core via GetInstance.
 func (c *Core) TriggerShutdown(reason string) {
 	select {
 	case c.cancelReason <- reason:

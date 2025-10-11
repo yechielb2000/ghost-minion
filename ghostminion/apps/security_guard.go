@@ -28,14 +28,15 @@ func (ctx *SecurityGuardApp) Start(wg *sync.WaitGroup) {
 
 	CPUMonitor := monitors.NewCPUMonitor(os.Getpid(), 50.0, 1*time.Second)
 	CPUMonitor.Start()
-	for isCPUSafe := range CPUMonitor.IsCPUSafe() {
-		if !isCPUSafe {
+	defer CPUMonitor.Stop()
+	for {
+		select {
+		case isCPUSafe := <-CPUMonitor.IsCPUSafe():
 			lgr.Warn("CPU is too high")
 			ctx.setIsSafe(isCPUSafe)
 		}
 	}
 
-	CPUMonitor.Stop()
 	/*
 		isSafe should be false on one of these terms
 		- it has been too much time without communicating with the C2 (3 days)
