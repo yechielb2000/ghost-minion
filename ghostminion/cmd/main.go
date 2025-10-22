@@ -18,11 +18,6 @@ func main() {
 	defer config.DeleteConfig()
 	defer lgr.Close()
 
-	// if err := hider.Hide(); err != nil {
-	// 	return
-	// }
-	lgr.Info("hello world")
-
 	targetId := persistence.GeTargetID()
 	err := cfg.Update(func(c *config.Config) {
 		c.AgentID = targetId
@@ -30,9 +25,7 @@ func main() {
 	if err != nil {
 		lgr.Error("Error updating agent ID: " + err.Error())
 	}
-
-	lgr.Debug("targetId:", targetId)
-
+	
 	appCore := core.GetInstance()
 	RegisterDefaultApps(appCore, cfg)
 	appCore.Start() // todo: should run security here

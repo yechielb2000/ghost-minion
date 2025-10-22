@@ -9,10 +9,11 @@ import (
 )
 
 type Config struct {
-	AgentID        string              `yaml:"AgentID"`
-	Installation   InstallationConfig  `yaml:"Installation"`
-	Communication  CommunicationConfig `yaml:"Communication"`
-	Apps           []AppDataConfig     `yaml:"Apps"`
+	AgentID        string              `yaml:"agent_id"`
+	Installation   InstallationConfig  `yaml:"installation"`
+	Communication  CommunicationConfig `yaml:"communication"`
+	Apps           []AppDataConfig     `yaml:"apps"`
+	Hiding         HidingConfig        `yaml:"hiding"`
 	mu             sync.Mutex
 	configFilePath string
 }

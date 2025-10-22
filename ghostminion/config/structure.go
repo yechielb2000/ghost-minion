@@ -3,25 +3,25 @@ package config
 import "encoding/json"
 
 type InstallationConfig struct {
-	DBPath     string `yaml:"DBPath"`
-	DBPassword string `yaml:"DBPassword"`
-	AESKey     string `yaml:"AESKey"`
+	DBPath     string `yaml:"db_path"`
+	DBPassword string `yaml:"db_password"`
+	AESKey     string `yaml:"aes_key"`
 }
 
 type ServerConfig struct {
-	Address string `yaml:"Address"`
-	Port    int    `yaml:"Port"`
-	Key     string `yaml:"Key"`
+	Address string `yaml:"address"`
+	Port    int    `yaml:"port"`
+	Key     string `yaml:"key"`
 }
 
 type CommunicationConfig struct {
-	Interval    string         `yaml:"Interval"`
-	Servers     []ServerConfig `yaml:"Servers"`
-	Certificate string         `yaml:"Certificate"`
+	Interval    string         `yaml:"interval"`
+	Servers     []ServerConfig `yaml:"servers"`
+	Certificate string         `yaml:"certificate"`
 }
 
-type HiderConfig struct {
-	NewProcessName string `yaml:"NewProcessName"`
+type HidingConfig struct {
+	ProcessName string `yaml:"process_name"`
 }
 
 // AppDataConfig is the same as AppData
